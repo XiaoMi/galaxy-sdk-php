@@ -1,0 +1,19 @@
+{
+  "name": "xiaomi/galaxy-sds-sdk",
+  "description": "Xiaomi Structured Store Service PHP SDK",
+  "keywords": [
+    "xiaomi",
+    "sds",
+    "api",
+    "sdk"
+  ],
+  "version": "0.1",
+  "license": "Apache",
+  "autoload": {
+    "classmap": ["lib/"]
+  },
+  "require": {
+    "php": ">=5.3",
+    "symfony/class-loader": "2.5.5"
+  }
+}
