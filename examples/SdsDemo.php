@@ -28,14 +28,14 @@ use SDS\Table\TableQuota;
 use SDS\Table\TableSchema;
 use SDS\Table\TableSpec;
 
-// Set your appID and AppSecret
-$appId = "";
+// Set your AppKey and AppSecret
+$appKey = "";
 $appSecret = "";
 
 $credential = new Credential(
   array(
     "type" => UserType::APP_SECRET,
-    "secretKeyId" => $appId,
+    "secretKeyId" => $appKey,
     "secretKey" => $appSecret
   )
 );
