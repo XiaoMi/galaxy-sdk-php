@@ -21,6 +21,9 @@ class DatumUtil
    */
   public static function datum($value, $type = null)
   {
+    if (is_null($value)) {
+      throw new \Exception("Datum must not be null");
+    }
     $val = null;
     if (is_null($type)) {
       switch (gettype($value)) {
@@ -55,6 +58,9 @@ class DatumUtil
         break;
       case DataType::INT64:
         $val = new Value(array("int64Value" => $value));
+        break;
+      case DataType::FLOAT:
+        $val = new Value(array("doubleValue" => $value));
         break;
       case DataType::DOUBLE:
         $val = new Value(array("doubleValue" => $value));
