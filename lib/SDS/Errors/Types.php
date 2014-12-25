@@ -123,6 +123,10 @@ final class ErrorCode {
    * 无效请求
    */
   const BAD_REQUEST = 34;
+  /**
+   * HTTP传输层错误
+   */
+  const TTRANSPORT_ERROR = 35;
   static public $__names = array(
     1 => 'INTERNAL_ERROR',
     2 => 'SERVICE_UNAVAILABLE',
@@ -142,6 +146,22 @@ final class ErrorCode {
     32 => 'CLOCK_TOO_SKEWED',
     33 => 'REQUEST_TOO_LARGE',
     34 => 'BAD_REQUEST',
+    35 => 'TTRANSPORT_ERROR',
+  );
+}
+
+final class RetryType {
+  /**
+   * 安全重试，比如建立链接超时，时钟偏移太大等错误，可以安全的进行自动重试
+   */
+  const SAFE = 0;
+  /**
+   * 非安全重试，比如操作超时，系统错误等，需要开发者显式指定，系统不应自动重试
+   */
+  const UNSAFE = 1;
+  static public $__names = array(
+    0 => 'SAFE',
+    1 => 'UNSAFE',
   );
 }
 
@@ -301,10 +321,11 @@ class ServiceException extends TException {
 }
 
 final class Constant extends \Thrift\Type\TConstant {
-  static protected $ERROR_AUTO_BACKOFF;
+  static protected $ERROR_BACKOFF;
+  static protected $ERROR_RETRY_TYPE;
   static protected $MAX_RETRY;
 
-  static protected function init_ERROR_AUTO_BACKOFF() {
+  static protected function init_ERROR_BACKOFF() {
     return     /**
      * SDK自动重试的错误码及回退(backoff)基准时间，
      * 等待时间 = 2 ^ 重试次数 * 回退基准时间
@@ -313,6 +334,21 @@ array(
             2 => 1000,
             25 => 1000,
             32 => 0,
+            1 => 1000,
+            35 => 1000,
+    );
+  }
+
+  static protected function init_ERROR_RETRY_TYPE() {
+    return     /**
+     * 错误码所对应的重试类型
+     */
+array(
+            2 =>       0,
+            25 =>       0,
+            32 =>       0,
+            1 =>       1,
+            35 =>       1,
     );
   }
 

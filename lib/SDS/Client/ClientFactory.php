@@ -172,7 +172,7 @@ class RetryableClient
 
   private function backoffTime($errorCode)
   {
-    $backoffConf = Constant::get('ERROR_AUTO_BACKOFF');
+    $backoffConf = Constant::get('ERROR_BACKOFF');
     if(array_key_exists($errorCode, $backoffConf)) {
       return $backoffConf[$errorCode];
     } else {

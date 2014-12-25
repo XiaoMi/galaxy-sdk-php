@@ -40,7 +40,7 @@ class Version {
    * 
    * @var string
    */
-  public $patch = "d0bc1b06";
+  public $patch = "e882eb61";
   /**
    * 附加信息
    * 
@@ -185,23 +185,23 @@ final class Constant extends \Thrift\Type\TConstant {
 
   static protected function init_DEFAULT_CLIENT_TIMEOUT() {
     return     /**
-     * client端读写超时时间（s）
+     * client端读写超时时间（ms）
      */
-10;
+10000;
   }
 
   static protected function init_DEFAULT_ADMIN_CLIENT_TIMEOUT() {
     return     /**
-     * client端DDL操作超时时间（s）
+     * client端DDL操作超时时间（ms）
      */
-30;
+30000;
   }
 
   static protected function init_DEFAULT_CLIENT_CONN_TIMEOUT() {
     return     /**
-     * client端连接超时时间（s）
+     * client端连接超时时间（ms）
      */
-3;
+3000;
   }
 
   static protected function init_DEFAULT_SERVICE_ENDPOINT() {

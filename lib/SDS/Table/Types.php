@@ -372,6 +372,12 @@ class Value {
    * @var string[]
    */
   public $binarySetValue = null;
+  /**
+   * null，只用于RC_BASIC存储格式
+   * 
+   * @var bool
+   */
+  public $nullValue = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -472,6 +478,10 @@ class Value {
             'type' => TType::STRING,
             ),
           ),
+        20 => array(
+          'var' => 'nullValue',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -522,6 +532,9 @@ class Value {
       }
       if (isset($vals['binarySetValue'])) {
         $this->binarySetValue = $vals['binarySetValue'];
+      }
+      if (isset($vals['nullValue'])) {
+        $this->nullValue = $vals['nullValue'];
       }
     }
   }
@@ -737,6 +750,13 @@ class Value {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 20:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->nullValue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -926,6 +946,11 @@ class Value {
       }
       $xfer += $output->writeFieldEnd();
     }
+    if ($this->nullValue !== null) {
+      $xfer += $output->writeFieldBegin('nullValue', TType::BOOL, 20);
+      $xfer += $output->writeBool($this->nullValue);
+      $xfer += $output->writeFieldEnd();
+    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -1048,31 +1073,31 @@ class ProvisionThroughput {
   /**
    * @var int
    */
-  public $readQps = null;
+  public $readCapacity = null;
   /**
    * @var int
    */
-  public $writeQps = null;
+  public $writeCapacity = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'readQps',
+          'var' => 'readCapacity',
           'type' => TType::I64,
           ),
         2 => array(
-          'var' => 'writeQps',
+          'var' => 'writeCapacity',
           'type' => TType::I64,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['readQps'])) {
-        $this->readQps = $vals['readQps'];
+      if (isset($vals['readCapacity'])) {
+        $this->readCapacity = $vals['readCapacity'];
       }
-      if (isset($vals['writeQps'])) {
-        $this->writeQps = $vals['writeQps'];
+      if (isset($vals['writeCapacity'])) {
+        $this->writeCapacity = $vals['writeCapacity'];
       }
     }
   }
@@ -1098,14 +1123,14 @@ class ProvisionThroughput {
       {
         case 1:
           if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->readQps);
+            $xfer += $input->readI64($this->readCapacity);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
           if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->writeQps);
+            $xfer += $input->readI64($this->writeCapacity);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -1123,14 +1148,14 @@ class ProvisionThroughput {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('ProvisionThroughput');
-    if ($this->readQps !== null) {
-      $xfer += $output->writeFieldBegin('readQps', TType::I64, 1);
-      $xfer += $output->writeI64($this->readQps);
+    if ($this->readCapacity !== null) {
+      $xfer += $output->writeFieldBegin('readCapacity', TType::I64, 1);
+      $xfer += $output->writeI64($this->readCapacity);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->writeQps !== null) {
-      $xfer += $output->writeFieldBegin('writeQps', TType::I64, 2);
-      $xfer += $output->writeI64($this->writeQps);
+    if ($this->writeCapacity !== null) {
+      $xfer += $output->writeFieldBegin('writeCapacity', TType::I64, 2);
+      $xfer += $output->writeI64($this->writeCapacity);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -2034,6 +2059,12 @@ class TableMetadata {
    * @var \SDS\Table\ProvisionThroughput
    */
   public $throughput = null;
+  /**
+   * 表备注信息
+   * 
+   * @var string
+   */
+  public $description = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -2072,6 +2103,10 @@ class TableMetadata {
           'type' => TType::STRUCT,
           'class' => '\SDS\Table\ProvisionThroughput',
           ),
+        6 => array(
+          'var' => 'description',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -2089,6 +2124,9 @@ class TableMetadata {
       }
       if (isset($vals['throughput'])) {
         $this->throughput = $vals['throughput'];
+      }
+      if (isset($vals['description'])) {
+        $this->description = $vals['description'];
       }
     }
   }
@@ -2172,6 +2210,13 @@ class TableMetadata {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 6:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->description);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -2236,6 +2281,11 @@ class TableMetadata {
       }
       $xfer += $output->writeFieldBegin('throughput', TType::STRUCT, 5);
       $xfer += $this->throughput->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->description !== null) {
+      $xfer += $output->writeFieldBegin('description', TType::STRING, 6);
+      $xfer += $output->writeString($this->description);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
