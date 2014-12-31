@@ -35,7 +35,7 @@ $credential = new Credential(
   )
 );
 $clientFactory = new ClientFactory($credential, true, false); // verbose off
-$endpoint = "https://sds.api.xiaomi.com";
+$endpoint = "http://cnbj-s0.sds.api.xiaomi.com";
 $adminClient = $clientFactory->newAdminClient($endpoint .
   Constant::get('ADMIN_SERVICE_PATH'),
   Constant::get('DEFAULT_ADMIN_CLIENT_TIMEOUT'),

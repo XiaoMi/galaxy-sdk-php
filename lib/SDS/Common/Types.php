@@ -18,6 +18,29 @@ use Thrift\Exception\TApplicationException;
 
 
 /**
+ * thrift传输协议
+ */
+final class ThriftProtocol {
+  /**
+   * TCompactProtocl
+   */
+  const TCOMPACT = 0;
+  /**
+   * TJSONProtocol
+   */
+  const TJSON = 1;
+  /**
+   * TBINARYProtocol
+   */
+  const TBINARY = 2;
+  static public $__names = array(
+    0 => 'TCOMPACT',
+    1 => 'TJSON',
+    2 => 'TBINARY',
+  );
+}
+
+/**
  * 版本号，规则详见http://semver.org
  */
 class Version {
@@ -40,7 +63,7 @@ class Version {
    * 
    * @var string
    */
-  public $patch = "e882eb61";
+  public $patch = "03c3feba";
   /**
    * 附加信息
    * 
@@ -182,6 +205,12 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $AUTH_SERVICE_PATH;
   static protected $ADMIN_SERVICE_PATH;
   static protected $TABLE_SERVICE_PATH;
+  static protected $DEFAULT_THRIFT_HEADER;
+  static protected $THRIFT_JSON_HEADER;
+  static protected $THRIFT_COMPACT_HEADER;
+  static protected $THRIFT_BINARY_HEADER;
+  static protected $THRIFT_HEADER_MAP;
+  static protected $HEADER_THRIFT_MAP;
 
   static protected function init_DEFAULT_CLIENT_TIMEOUT() {
     return     /**
@@ -244,6 +273,42 @@ final class Constant extends \Thrift\Type\TConstant {
      * 表数据访问RPC路径
      */
 "/v1/api/table";
+  }
+
+  static protected function init_DEFAULT_THRIFT_HEADER() {
+    return     /**
+     * 兼容其它SDK，等同于application/x-thrift-json
+     */
+"application/x-thrift";
+  }
+
+  static protected function init_THRIFT_JSON_HEADER() {
+    return "application/x-thrift-json";
+  }
+
+  static protected function init_THRIFT_COMPACT_HEADER() {
+    return "application/x-thrift-compact";
+  }
+
+  static protected function init_THRIFT_BINARY_HEADER() {
+    return "application/x-thrift-binary";
+  }
+
+  static protected function init_THRIFT_HEADER_MAP() {
+    return array(
+            0 => "application/x-thrift-compact",
+            1 => "application/x-thrift-json",
+            2 => "application/x-thrift-binary",
+    );
+  }
+
+  static protected function init_HEADER_THRIFT_MAP() {
+    return array(
+      "application/x-thrift-compact" =>       0,
+      "application/x-thrift-json" =>       1,
+      "application/x-thrift-binary" =>       2,
+      "application/x-thrift" =>       1,
+    );
   }
 }
 

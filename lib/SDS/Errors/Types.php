@@ -127,6 +127,10 @@ final class ErrorCode {
    * HTTP传输层错误
    */
   const TTRANSPORT_ERROR = 35;
+  /**
+   * 不支持的thrift协议类型
+   */
+  const UNSUPPORTED_TPROTOCOL = 36;
   static public $__names = array(
     1 => 'INTERNAL_ERROR',
     2 => 'SERVICE_UNAVAILABLE',
@@ -147,6 +151,7 @@ final class ErrorCode {
     33 => 'REQUEST_TOO_LARGE',
     34 => 'BAD_REQUEST',
     35 => 'TTRANSPORT_ERROR',
+    36 => 'UNSUPPORTED_TPROTOCOL',
   );
 }
 
