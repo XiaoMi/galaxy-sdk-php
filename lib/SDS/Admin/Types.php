@@ -253,6 +253,12 @@ class AppInfo {
    * @var array
    */
   public $oauthAppMapping = null;
+  /**
+   * 小米应用名称
+   * 
+   * @var string
+   */
+  public $appName = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -289,6 +295,10 @@ class AppInfo {
             'type' => TType::STRING,
             ),
           ),
+        5 => array(
+          'var' => 'appName',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -303,6 +313,9 @@ class AppInfo {
       }
       if (isset($vals['oauthAppMapping'])) {
         $this->oauthAppMapping = $vals['oauthAppMapping'];
+      }
+      if (isset($vals['appName'])) {
+        $this->appName = $vals['appName'];
       }
     }
   }
@@ -380,6 +393,13 @@ class AppInfo {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 5:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->appName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -437,6 +457,11 @@ class AppInfo {
         }
         $output->writeMapEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->appName !== null) {
+      $xfer += $output->writeFieldBegin('appName', TType::STRING, 5);
+      $xfer += $output->writeString($this->appName);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();

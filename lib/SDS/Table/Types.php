@@ -283,6 +283,26 @@ final class TableState {
   );
 }
 
+final class ScanOp {
+  /**
+   * 统计满足查询条件的记录数
+   */
+  const COUNT = 0;
+  /**
+   * 删除满足查询条件的记录
+   */
+  const DELETE = 1;
+  /**
+   * 更新满足条件的记录
+   */
+  const UPDATE = 2;
+  static public $__names = array(
+    0 => 'COUNT',
+    1 => 'DELETE',
+    2 => 'UPDATE',
+  );
+}
+
 final class BatchOp {
   const GET = 1;
   const PUT = 2;
@@ -3047,6 +3067,113 @@ class TableSplit {
 
 }
 
+class ScanAction {
+  static $_TSPEC;
+
+  /**
+   * scan时连带操作
+   * 
+   * @var int
+   */
+  public $action = null;
+  /**
+   * 实际操作，不需要指定key
+   * 
+   * @var \SDS\Table\Request
+   */
+  public $request = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'action',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'request',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\Request',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['action'])) {
+        $this->action = $vals['action'];
+      }
+      if (isset($vals['request'])) {
+        $this->request = $vals['request'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ScanAction';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->action);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->request = new \SDS\Table\Request();
+            $xfer += $this->request->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ScanAction');
+    if ($this->action !== null) {
+      $xfer += $output->writeFieldBegin('action', TType::I32, 1);
+      $xfer += $output->writeI32($this->action);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->request !== null) {
+      if (!is_object($this->request)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 2);
+      $xfer += $this->request->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 class GetRequest {
   static $_TSPEC;
 
@@ -4263,6 +4390,18 @@ class ScanRequest {
    * @var bool
    */
   public $cacheResult = true;
+  /**
+   * 查找属性在seek之前进行顺序skip的次数。非必要情况，请不要设置
+   * 
+   * @var int
+   */
+  public $lookAheadStep = 0;
+  /**
+   * scan时的连带操作，包括COUNT，DELETE和UPDATE
+   * 
+   * @var \SDS\Table\ScanAction
+   */
+  public $action = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -4329,6 +4468,15 @@ class ScanRequest {
           'var' => 'cacheResult',
           'type' => TType::BOOL,
           ),
+        11 => array(
+          'var' => 'lookAheadStep',
+          'type' => TType::I32,
+          ),
+        12 => array(
+          'var' => 'action',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\ScanAction',
+          ),
         );
     }
     if (is_array($vals)) {
@@ -4361,6 +4509,12 @@ class ScanRequest {
       }
       if (isset($vals['cacheResult'])) {
         $this->cacheResult = $vals['cacheResult'];
+      }
+      if (isset($vals['lookAheadStep'])) {
+        $this->lookAheadStep = $vals['lookAheadStep'];
+      }
+      if (isset($vals['action'])) {
+        $this->action = $vals['action'];
       }
     }
   }
@@ -4492,6 +4646,21 @@ class ScanRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 11:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->lookAheadStep);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 12:
+          if ($ftype == TType::STRUCT) {
+            $this->action = new \SDS\Table\ScanAction();
+            $xfer += $this->action->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -4593,6 +4762,19 @@ class ScanRequest {
       $xfer += $output->writeBool($this->cacheResult);
       $xfer += $output->writeFieldEnd();
     }
+    if ($this->lookAheadStep !== null) {
+      $xfer += $output->writeFieldBegin('lookAheadStep', TType::I32, 11);
+      $xfer += $output->writeI32($this->lookAheadStep);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->action !== null) {
+      if (!is_object($this->action)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('action', TType::STRUCT, 12);
+      $xfer += $this->action->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -4615,6 +4797,12 @@ class ScanResult {
    * @var array[]
    */
   public $records = null;
+  /**
+   * 是否超过表的qps quota
+   * 
+   * @var bool
+   */
+  public $throttled = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -4649,6 +4837,10 @@ class ScanResult {
               ),
             ),
           ),
+        3 => array(
+          'var' => 'throttled',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -4657,6 +4849,9 @@ class ScanResult {
       }
       if (isset($vals['records'])) {
         $this->records = $vals['records'];
+      }
+      if (isset($vals['throttled'])) {
+        $this->throttled = $vals['throttled'];
       }
     }
   }
@@ -4732,6 +4927,13 @@ class ScanResult {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 3:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->throttled);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -4788,6 +4990,11 @@ class ScanResult {
         }
         $output->writeListEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->throttled !== null) {
+      $xfer += $output->writeFieldBegin('throttled', TType::BOOL, 3);
+      $xfer += $output->writeBool($this->throttled);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
