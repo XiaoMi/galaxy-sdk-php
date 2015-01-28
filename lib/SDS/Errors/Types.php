@@ -131,6 +131,11 @@ final class ErrorCode {
    * 不支持的thrift协议类型
    */
   const UNSUPPORTED_TPROTOCOL = 36;
+  /**
+   * 请求超时
+   * 
+   */
+  const REQUEST_TIMEOUT = 37;
   static public $__names = array(
     1 => 'INTERNAL_ERROR',
     2 => 'SERVICE_UNAVAILABLE',
@@ -152,6 +157,7 @@ final class ErrorCode {
     34 => 'BAD_REQUEST',
     35 => 'TTRANSPORT_ERROR',
     36 => 'UNSUPPORTED_TPROTOCOL',
+    37 => 'REQUEST_TIMEOUT',
   );
 }
 
@@ -338,6 +344,7 @@ final class Constant extends \Thrift\Type\TConstant {
 array(
             2 => 1000,
             25 => 1000,
+            37 => 0,
             32 => 0,
             1 => 1000,
             35 => 1000,
@@ -351,6 +358,7 @@ array(
 array(
             2 =>       0,
             25 =>       0,
+            37 =>       0,
             32 =>       0,
             1 =>       1,
             35 =>       1,

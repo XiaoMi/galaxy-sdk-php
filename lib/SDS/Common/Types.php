@@ -63,7 +63,7 @@ class Version {
    * 
    * @var string
    */
-  public $patch = "03c3feba";
+  public $patch = "bf602faf";
   /**
    * 附加信息
    * 
@@ -197,6 +197,7 @@ class Version {
 
 final class Constant extends \Thrift\Type\TConstant {
   static protected $DEFAULT_CLIENT_TIMEOUT;
+  static protected $DEFAULT_MAX_CLIENT_TIMEOUT;
   static protected $DEFAULT_ADMIN_CLIENT_TIMEOUT;
   static protected $DEFAULT_CLIENT_CONN_TIMEOUT;
   static protected $DEFAULT_SERVICE_ENDPOINT;
@@ -205,16 +206,27 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $AUTH_SERVICE_PATH;
   static protected $ADMIN_SERVICE_PATH;
   static protected $TABLE_SERVICE_PATH;
+  static protected $SCAN_COUNT;
   static protected $DEFAULT_THRIFT_HEADER;
   static protected $THRIFT_JSON_HEADER;
   static protected $THRIFT_COMPACT_HEADER;
   static protected $THRIFT_BINARY_HEADER;
   static protected $THRIFT_HEADER_MAP;
   static protected $HEADER_THRIFT_MAP;
+  static protected $HK_REQUEST_TIMEOUT;
+  static protected $HK_ERROR_CODE_HEADER;
+  static protected $MAX_CONTENT_SIZE;
 
   static protected function init_DEFAULT_CLIENT_TIMEOUT() {
     return     /**
      * client端读写超时时间（ms）
+     */
+10000;
+  }
+
+  static protected function init_DEFAULT_MAX_CLIENT_TIMEOUT() {
+    return     /**
+     * client端最大读写超时时间（ms）
      */
 10000;
   }
@@ -275,6 +287,13 @@ final class Constant extends \Thrift\Type\TConstant {
 "/v1/api/table";
   }
 
+  static protected function init_SCAN_COUNT() {
+    return     /**
+     * 开启ScanAction时， 获取操作数据的数目的key值
+     */
+"count";
+  }
+
   static protected function init_DEFAULT_THRIFT_HEADER() {
     return     /**
      * 兼容其它SDK，等同于application/x-thrift-json
@@ -309,6 +328,27 @@ final class Constant extends \Thrift\Type\TConstant {
       "application/x-thrift-binary" =>       2,
       "application/x-thrift" =>       1,
     );
+  }
+
+  static protected function init_HK_REQUEST_TIMEOUT() {
+    return     /**
+     * HTTP请求的超时时限
+     */
+"X-Xiaomi-Request-Timeout";
+  }
+
+  static protected function init_HK_ERROR_CODE_HEADER() {
+    return     /**
+     * HTTP头的错误码
+     */
+"X-Xiaomi-Error-Code";
+  }
+
+  static protected function init_MAX_CONTENT_SIZE() {
+    return     /**
+     * HTTP Body最大字节数
+     */
+524288;
   }
 }
 

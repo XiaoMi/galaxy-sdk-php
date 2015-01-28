@@ -491,7 +491,6 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $HK_CONTENT_MD5;
   static protected $HK_AUTHORIZATION;
   static protected $SUGGESTED_SIGNATURE_HEADERS;
-  static protected $MAX_CONTENT_SIZE;
 
   static protected function init_SIGNATURE_SUPPORT() {
     return     /**
@@ -543,13 +542,6 @@ array(
       "X-Xiaomi-Timestamp",
       "X-Xiaomi-Content-MD5",
     );
-  }
-
-  static protected function init_MAX_CONTENT_SIZE() {
-    return     /**
-     * HTTP Body最大字节数
-     */
-524288;
   }
 }
 
