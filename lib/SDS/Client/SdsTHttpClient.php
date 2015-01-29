@@ -291,9 +291,9 @@ class SdsTHttpClient extends THttpClient
       return array();
     }
     $len = TStringFuncFactory::create()->strlen($this->buf_);
-    if ($len > Constant::get('MAX_CONTENT_SIZE')) {
+    if ($len > \SDS\Common\Constant::get('MAX_CONTENT_SIZE')) {
       throw SdsException::createTransportException(0, "Request too large, exceeds the max allowed size: " .
-        Constant::get('MAX_CONTENT_SIZE'));
+        \SDS\Common\Constant::get('MAX_CONTENT_SIZE'));
     }
 
     $headers = array();
