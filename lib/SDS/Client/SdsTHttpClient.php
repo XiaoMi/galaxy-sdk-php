@@ -210,9 +210,9 @@ class SdsTHttpClient extends THttpClient
   public function flush()
   {
     $defaultHeaders = array('Host' => $this->host_,
-      'Accept' => 'application/x-thrift',
+      'Accept' => \SDS\Common\Constant::get('THRIFT_COMPACT_HEADER'),
       'User-Agent' => 'PHP/THttpClient',
-      'Content-Type' => 'application/x-thrift',
+      'Content-Type' => \SDS\Common\Constant::get('THRIFT_COMPACT_HEADER'),
       'Content-Length' => TStringFuncFactory::create()->strlen($this->buf_));
     $headers = array();
     foreach (array_merge($defaultHeaders, $this->headers_, $this->getAuthenticationHeaders())

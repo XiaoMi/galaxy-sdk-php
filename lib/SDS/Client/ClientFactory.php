@@ -10,7 +10,7 @@ namespace SDS\Client;
 use SDS\Common\Version;
 use SDS\Errors\Constant;
 use SDS\Errors\ServiceException;
-use Thrift\Protocol\TJSONProtocol;
+use Thrift\Protocol\TCompactProtocol;
 
 class ClientFactory
 {
@@ -115,7 +115,7 @@ class ClientFactory
     $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout,
         $connTimeout, $this->retryIfOperationTimeout_, $this->verbose_);
     $httpClient->addHeaders(array('User-Agent' => $this->userAgent()));
-    $thriftProtocol = new TJSONProtocol($httpClient);
+    $thriftProtocol = new TCompactProtocol($httpClient);
 
     return new $clientClass($thriftProtocol, $thriftProtocol);
   }
