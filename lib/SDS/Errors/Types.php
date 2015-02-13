@@ -206,6 +206,12 @@ class ServiceException extends TException {
    * @var string
    */
   public $callId = null;
+  /**
+   * 请求标识
+   * 
+   * @var string
+   */
+  public $requestId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -226,6 +232,10 @@ class ServiceException extends TException {
           'var' => 'callId',
           'type' => TType::STRING,
           ),
+        5 => array(
+          'var' => 'requestId',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -240,6 +250,9 @@ class ServiceException extends TException {
       }
       if (isset($vals['callId'])) {
         $this->callId = $vals['callId'];
+      }
+      if (isset($vals['requestId'])) {
+        $this->requestId = $vals['requestId'];
       }
     }
   }
@@ -291,6 +304,13 @@ class ServiceException extends TException {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 5:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->requestId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -322,6 +342,11 @@ class ServiceException extends TException {
     if ($this->callId !== null) {
       $xfer += $output->writeFieldBegin('callId', TType::STRING, 4);
       $xfer += $output->writeString($this->callId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->requestId !== null) {
+      $xfer += $output->writeFieldBegin('requestId', TType::STRING, 5);
+      $xfer += $output->writeString($this->requestId);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();

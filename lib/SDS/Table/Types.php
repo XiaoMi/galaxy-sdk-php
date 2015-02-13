@@ -3067,113 +3067,6 @@ class TableSplit {
 
 }
 
-class ScanAction {
-  static $_TSPEC;
-
-  /**
-   * scan时连带操作
-   * 
-   * @var int
-   */
-  public $action = null;
-  /**
-   * 实际操作，不需要指定key
-   * 
-   * @var \SDS\Table\Request
-   */
-  public $request = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'action',
-          'type' => TType::I32,
-          ),
-        2 => array(
-          'var' => 'request',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\Request',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['action'])) {
-        $this->action = $vals['action'];
-      }
-      if (isset($vals['request'])) {
-        $this->request = $vals['request'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'ScanAction';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->action);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRUCT) {
-            $this->request = new \SDS\Table\Request();
-            $xfer += $this->request->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('ScanAction');
-    if ($this->action !== null) {
-      $xfer += $output->writeFieldBegin('action', TType::I32, 1);
-      $xfer += $output->writeI32($this->action);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->request !== null) {
-      if (!is_object($this->request)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 2);
-      $xfer += $this->request->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
 class GetRequest {
   static $_TSPEC;
 
@@ -4318,6 +4211,285 @@ class RemoveResult {
 
 }
 
+class Request {
+  static $_TSPEC;
+
+  /**
+   * 随机读操作
+   * 
+   * @var \SDS\Table\GetRequest
+   */
+  public $getRequest = null;
+  /**
+   * 写入操作，不支持条件
+   * 
+   * @var \SDS\Table\PutRequest
+   */
+  public $putRequest = null;
+  /**
+   * 自增操作
+   * 
+   * @var \SDS\Table\IncrementRequest
+   */
+  public $incrementRequest = null;
+  /**
+   * 删除操作，不支持条件
+   * 
+   * @var \SDS\Table\RemoveRequest
+   */
+  public $removeRequest = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'getRequest',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\GetRequest',
+          ),
+        2 => array(
+          'var' => 'putRequest',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\PutRequest',
+          ),
+        3 => array(
+          'var' => 'incrementRequest',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\IncrementRequest',
+          ),
+        4 => array(
+          'var' => 'removeRequest',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\RemoveRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['getRequest'])) {
+        $this->getRequest = $vals['getRequest'];
+      }
+      if (isset($vals['putRequest'])) {
+        $this->putRequest = $vals['putRequest'];
+      }
+      if (isset($vals['incrementRequest'])) {
+        $this->incrementRequest = $vals['incrementRequest'];
+      }
+      if (isset($vals['removeRequest'])) {
+        $this->removeRequest = $vals['removeRequest'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Request';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->getRequest = new \SDS\Table\GetRequest();
+            $xfer += $this->getRequest->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->putRequest = new \SDS\Table\PutRequest();
+            $xfer += $this->putRequest->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRUCT) {
+            $this->incrementRequest = new \SDS\Table\IncrementRequest();
+            $xfer += $this->incrementRequest->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::STRUCT) {
+            $this->removeRequest = new \SDS\Table\RemoveRequest();
+            $xfer += $this->removeRequest->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Request');
+    if ($this->getRequest !== null) {
+      if (!is_object($this->getRequest)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('getRequest', TType::STRUCT, 1);
+      $xfer += $this->getRequest->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->putRequest !== null) {
+      if (!is_object($this->putRequest)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('putRequest', TType::STRUCT, 2);
+      $xfer += $this->putRequest->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->incrementRequest !== null) {
+      if (!is_object($this->incrementRequest)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('incrementRequest', TType::STRUCT, 3);
+      $xfer += $this->incrementRequest->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->removeRequest !== null) {
+      if (!is_object($this->removeRequest)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('removeRequest', TType::STRUCT, 4);
+      $xfer += $this->removeRequest->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class ScanAction {
+  static $_TSPEC;
+
+  /**
+   * scan时连带操作
+   * 
+   * @var int
+   */
+  public $action = null;
+  /**
+   * 实际操作，不需要指定key
+   * 
+   * @var \SDS\Table\Request
+   */
+  public $request = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'action',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'request',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\Request',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['action'])) {
+        $this->action = $vals['action'];
+      }
+      if (isset($vals['request'])) {
+        $this->request = $vals['request'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ScanAction';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->action);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->request = new \SDS\Table\Request();
+            $xfer += $this->request->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ScanAction');
+    if ($this->action !== null) {
+      $xfer += $output->writeFieldBegin('action', TType::I32, 1);
+      $xfer += $output->writeI32($this->action);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->request !== null) {
+      if (!is_object($this->request)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 2);
+      $xfer += $this->request->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 /**
  * 范围查询，支持主键和二级索引查询，
  * 查询范围为闭开区间[startKey, endKey)，
@@ -4995,178 +5167,6 @@ class ScanResult {
     if ($this->throttled !== null) {
       $xfer += $output->writeFieldBegin('throttled', TType::BOOL, 3);
       $xfer += $output->writeBool($this->throttled);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class Request {
-  static $_TSPEC;
-
-  /**
-   * 随机读操作
-   * 
-   * @var \SDS\Table\GetRequest
-   */
-  public $getRequest = null;
-  /**
-   * 写入操作，不支持条件
-   * 
-   * @var \SDS\Table\PutRequest
-   */
-  public $putRequest = null;
-  /**
-   * 自增操作
-   * 
-   * @var \SDS\Table\IncrementRequest
-   */
-  public $incrementRequest = null;
-  /**
-   * 删除操作，不支持条件
-   * 
-   * @var \SDS\Table\RemoveRequest
-   */
-  public $removeRequest = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'getRequest',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\GetRequest',
-          ),
-        2 => array(
-          'var' => 'putRequest',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\PutRequest',
-          ),
-        3 => array(
-          'var' => 'incrementRequest',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\IncrementRequest',
-          ),
-        4 => array(
-          'var' => 'removeRequest',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\RemoveRequest',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['getRequest'])) {
-        $this->getRequest = $vals['getRequest'];
-      }
-      if (isset($vals['putRequest'])) {
-        $this->putRequest = $vals['putRequest'];
-      }
-      if (isset($vals['incrementRequest'])) {
-        $this->incrementRequest = $vals['incrementRequest'];
-      }
-      if (isset($vals['removeRequest'])) {
-        $this->removeRequest = $vals['removeRequest'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'Request';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->getRequest = new \SDS\Table\GetRequest();
-            $xfer += $this->getRequest->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRUCT) {
-            $this->putRequest = new \SDS\Table\PutRequest();
-            $xfer += $this->putRequest->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRUCT) {
-            $this->incrementRequest = new \SDS\Table\IncrementRequest();
-            $xfer += $this->incrementRequest->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 4:
-          if ($ftype == TType::STRUCT) {
-            $this->removeRequest = new \SDS\Table\RemoveRequest();
-            $xfer += $this->removeRequest->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('Request');
-    if ($this->getRequest !== null) {
-      if (!is_object($this->getRequest)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('getRequest', TType::STRUCT, 1);
-      $xfer += $this->getRequest->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->putRequest !== null) {
-      if (!is_object($this->putRequest)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('putRequest', TType::STRUCT, 2);
-      $xfer += $this->putRequest->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->incrementRequest !== null) {
-      if (!is_object($this->incrementRequest)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('incrementRequest', TType::STRUCT, 3);
-      $xfer += $this->incrementRequest->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->removeRequest !== null) {
-      if (!is_object($this->removeRequest)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('removeRequest', TType::STRUCT, 4);
-      $xfer += $this->removeRequest->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();

@@ -36,6 +36,10 @@ class SdsException extends \Exception
    * @var string error type ['transport', 'service']
    */
   public $type;
+  /**
+   * @var string request id identifies the request, assigned from client side
+   */
+  public $requestId;
 
   public function __construct($arr)
   {
@@ -45,6 +49,7 @@ class SdsException extends \Exception
     $this->errorMessage = $arr['errorMessage'];
     $this->details = $arr['details'];
     $this->callId = $arr['callId'];
+    $this->requestId = $arr['requestId'];
 
     parent::__construct($this->getErrorString());
   }
@@ -60,13 +65,13 @@ class SdsException extends \Exception
       case "service":
         return "Service error [error code: " . $errorCode .
         ", error message: " . $this->errorMessage . ", details: " . $this->details .
-        ", call id: " . $this->callId . "]";
+        ", call id: " . $this->callId . ", request id: " . $this->requestId . "]";
       default:
         return "Unknown exception";
     }
   }
 
-  public static function createServiceException($type, $errorCode, $errorMessage, $details, $callId)
+  public static function createServiceException($type, $errorCode, $errorMessage, $details, $callId, $requestId)
   {
     return new SdsException(array(
       "type" => $type,
@@ -74,7 +79,8 @@ class SdsException extends \Exception
       "errorMessage" => $errorMessage,
       "details" => $details,
       "callId" => $callId,
-      "httpStatusCode" => 200
+      "httpStatusCode" => 200,
+      "requestId" => $requestId
     ));
   }
 
@@ -105,7 +111,8 @@ class SdsException extends \Exception
       "errorCode" => $errorCode,
       "errorMessage" => $errorMessage,
       "details" => "",
-      "callId" => ""
+      "callId" => "",
+      "requestId" =>""
     ));
   }
 } 

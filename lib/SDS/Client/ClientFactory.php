@@ -158,7 +158,8 @@ class RetryableClient
           $se->errorCode,
           $se->errorMessage,
           $se->details,
-          $se->callId);
+          $se->callId,
+          $se->requestId);
       }
       $sleepMs = $this->backoffTime($ex->errorCode);
       if ($retry >= $this->maxRetry_ || $sleepMs < 0) {
@@ -178,5 +179,10 @@ class RetryableClient
     } else {
       return -1;
     }
+  }
+  private function randomIdGenerate($length)
+  {
+    $requestId = md5((uniqid("", TRUE)));
+    return substr($requestId, 0, 8);
   }
 }

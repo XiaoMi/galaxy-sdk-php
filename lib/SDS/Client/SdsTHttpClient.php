@@ -220,12 +220,12 @@ class SdsTHttpClient extends THttpClient
       $headers[] = "$key: $value";
     }
     $headers[] = "Expect:"; // fix Expect: 100-continue issue
-
-    $ch = curl_init($this->url_);
+    $uri = $this->url_ . '?requestId=' . $this->generateRandomId();
+    $ch = curl_init($uri);
 
     curl_setopt_array($ch, array(
       CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_URL => $this->url_,
+      CURLOPT_URL => $uri,
       CURLOPT_HTTPHEADER => $headers,
       CURLOPT_POST => true,
       CURLOPT_HEADER => true,
@@ -360,5 +360,10 @@ class SdsTHttpClient extends THttpClient
   public function addHeaders($headers)
   {
     $this->headers_ = array_merge($this->headers_, $headers);
+  }
+
+  private function generateRandomId()
+  {
+    return sprintf('%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff));
   }
 }
