@@ -17,6 +17,7 @@ class ClientFactory
   private $credential_;
   private $version_;
   private $verbose_;
+  private $httpClient_;
   protected $retryIfOperationTimeout_;
 
   /**
@@ -54,7 +55,7 @@ class ClientFactory
   public function newAuthClient($url, $timeout, $connTimeout)
   {
     $client = $this->getClient('SDS\Auth\AuthServiceClient', $url, $timeout, $connTimeout);
-    return new RetryableClient($client);
+    return new RetryableClient($client, $this->httpClient_);
   }
 
   /**
@@ -76,7 +77,7 @@ class ClientFactory
   public function newAdminClient($url, $timeout, $connTimeout)
   {
     $client = $this->getClient('SDS\Admin\AdminServiceClient', $url, $timeout, $connTimeout);
-    return new RetryableClient($client);
+    return new RetryableClient($client, $this->httpClient_);
   }
 
   /**
@@ -98,7 +99,7 @@ class ClientFactory
   public function newTableClient($url, $timeout, $connTimeout)
   {
     $client = $this->getClient('SDS\Table\TableServiceClient', $url, $timeout, $connTimeout);
-    return new RetryableClient($client);
+    return new RetryableClient($client, $this->httpClient_);
   }
 
   protected function getClient($clientClass, $url, $timeout, $connTimeout)
@@ -114,6 +115,7 @@ class ClientFactory
 
     $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout,
         $connTimeout, $this->retryIfOperationTimeout_, $this->verbose_);
+    $this->httpClient_ = $httpClient;
     $httpClient->addHeaders(array('User-Agent' => $this->userAgent()));
     $thriftProtocol = new TBinaryProtocol($httpClient);
 
@@ -136,16 +138,20 @@ class RetryableClient
 {
   private $maxRetry_;
   private $client_;
+  private $httpClient_;
 
-  public function __construct($client, $maxRetry = 1)
+  public function __construct($client, $httpClient, $maxRetry = 1)
   {
     $this->client_ = $client;
+    $this->httpClient_ = $httpClient;
     $this->maxRetry_ = $maxRetry;
   }
 
   public function __call($name, $arguments)
   {
     $method = new \ReflectionMethod($this->client_, $name);
+    $queryString = 'type=' . $name;
+    $this->httpClient_->setQueryString($queryString);
     $retry = 0;
     while (true) {
       $ex = null;
@@ -179,10 +185,5 @@ class RetryableClient
     } else {
       return -1;
     }
-  }
-  private function randomIdGenerate($length)
-  {
-    $requestId = md5((uniqid("", TRUE)));
-    return substr($requestId, 0, 8);
   }
 }

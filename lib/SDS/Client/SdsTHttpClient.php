@@ -86,6 +86,11 @@ class SdsTHttpClient extends THttpClient
    * @var \DateInterval
    */
   protected $clockOffset_;
+  /**
+   * Query string in url
+   * @var string
+   */
+  protected $queryString_;
 
   /**
    * Make a new HTTP client.
@@ -110,6 +115,7 @@ class SdsTHttpClient extends THttpClient
     $this->headers_ = array();
     $this->clockOffset_ = null;
     $this->readOffset_ = 0;
+    $this->queryString_ = '';
   }
 
   private function getHostHeader($parts) {
@@ -149,6 +155,16 @@ class SdsTHttpClient extends THttpClient
   public function setConnTimeoutSecs($connTimeout)
   {
     $this->connTimeout_ = $connTimeout;
+  }
+
+  /**
+   * Set query string
+   *
+   * @param string $queryString
+   */
+  public function setQueryString($queryString)
+  {
+    $this->queryString_ = $queryString;
   }
 
   /**
@@ -220,7 +236,10 @@ class SdsTHttpClient extends THttpClient
       $headers[] = "$key: $value";
     }
     $headers[] = "Expect:"; // fix Expect: 100-continue issue
-    $uri = $this->url_ . '?requestId=' . $this->generateRandomId();
+    $uri = $this->url_ . '?id=' . $this->generateRandomId();
+    if ($this->queryString_ != '') {
+      $uri = $uri . '&' . $this->queryString_;
+    }
     $ch = curl_init($uri);
 
     curl_setopt_array($ch, array(
