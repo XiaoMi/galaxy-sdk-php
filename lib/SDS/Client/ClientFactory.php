@@ -39,70 +39,74 @@ class ClientFactory
   /**
    * @return \SDS\Auth\AuthServiceClient OAuth token generation service client
    */
-  public function newDefaultAuthClient()
+  public function newDefaultAuthClient($supportAccountKey = false)
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
       Constant::get('TABLE_AUTH_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
-    return $this->newAuthClient($url, $timeout, $connTimeout);
+    return $this->newAuthClient($url, $timeout, $connTimeout, $supportAccountKey);
   }
+
 
   /**
    * @param $url string the authentication endpoint url
    * @return \SDS\Auth\AuthServiceClient OAuth token generation service client
    */
-  public function newAuthClient($url, $timeout, $connTimeout)
+  public function newAuthClient($url, $timeout, $connTimeout, $supportAccountKey = false)
   {
-    $client = $this->getClient('SDS\Auth\AuthServiceClient', $url, $timeout, $connTimeout);
+    $client = $this->getClient('SDS\Auth\AuthServiceClient', $url, $timeout, $connTimeout,
+      $supportAccountKey);
     return new RetryableClient($client, $this->httpClient_);
   }
 
   /**
    * @return \SDS\Admin\AdminServiceClient
    */
-  public function newDefaultAdminClient()
+  public function newDefaultAdminClient($supportAccountKey = false)
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
       Constant::get('ADMIN_SERVICE_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
-    return $this->newAdminClient($url, $timeout, $connTimeout);
+    return $this->newAdminClient($url, $timeout, $connTimeout, $supportAccountKey);
   }
 
   /**
    * @param $url string the administration endpoint url
    * @return \SDS\Admin\AdminServiceClient
    */
-  public function newAdminClient($url, $timeout, $connTimeout)
+  public function newAdminClient($url, $timeout, $connTimeout, $supportAccountKey = false)
   {
-    $client = $this->getClient('SDS\Admin\AdminServiceClient', $url, $timeout, $connTimeout);
+    $client = $this->getClient('SDS\Admin\AdminServiceClient', $url, $timeout, $connTimeout,
+      $supportAccountKey);
     return new RetryableClient($client, $this->httpClient_);
   }
 
   /**
    * @return \SDS\Table\TableServiceClient
    */
-  public function newDefaultTableClient()
+  public function newDefaultTableClient($supportAccountKey = false)
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
       Constant::get('TABLE_SERVICE_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
-    return $this->newTableClient($url, $timeout, $connTimeout);
+    return $this->newTableClient($url, $timeout, $connTimeout, $supportAccountKey);
   }
 
   /**
    * @param $url string the table access endpoint url
    * @return \SDS\Table\TableServiceClient
    */
-  public function newTableClient($url, $timeout, $connTimeout)
+  public function newTableClient($url, $timeout, $connTimeout, $supportAccountKey = false)
   {
-    $client = $this->getClient('SDS\Table\TableServiceClient', $url, $timeout, $connTimeout);
+    $client = $this->getClient('SDS\Table\TableServiceClient', $url, $timeout, $connTimeout,
+      $supportAccountKey);
     return new RetryableClient($client, $this->httpClient_);
   }
 
-  protected function getClient($clientClass, $url, $timeout, $connTimeout)
+  protected function getClient($clientClass, $url, $timeout, $connTimeout, $supportAccountKey)
   {
     $parts = parse_url($url);
     if (!isset($parts['port'])) {
@@ -114,7 +118,8 @@ class ClientFactory
     }
 
     $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout,
-        $connTimeout, $this->retryIfOperationTimeout_, $this->verbose_);
+      $connTimeout, $this->retryIfOperationTimeout_, $this->verbose_);
+    $httpClient->setSupportAccountKey($supportAccountKey);
     $this->httpClient_ = $httpClient;
     $httpClient->addHeaders(array('User-Agent' => $this->userAgent()));
     $thriftProtocol = new TBinaryProtocol($httpClient);
@@ -180,7 +185,7 @@ class RetryableClient
   private function backoffTime($errorCode)
   {
     $backoffConf = Constant::get('ERROR_BACKOFF');
-    if(array_key_exists($errorCode, $backoffConf)) {
+    if (array_key_exists($errorCode, $backoffConf)) {
       return $backoffConf[$errorCode];
     } else {
       return -1;

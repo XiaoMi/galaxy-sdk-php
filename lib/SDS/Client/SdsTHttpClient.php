@@ -92,6 +92,8 @@ class SdsTHttpClient extends THttpClient
    */
   protected $queryString_;
 
+  protected $supportAccountKey_;
+
   /**
    * Make a new HTTP client.
    *
@@ -116,6 +118,7 @@ class SdsTHttpClient extends THttpClient
     $this->clockOffset_ = null;
     $this->readOffset_ = 0;
     $this->queryString_ = '';
+    $this->supportAccountKey_ = false;
   }
 
   private function getHostHeader($parts) {
@@ -165,6 +168,11 @@ class SdsTHttpClient extends THttpClient
   public function setQueryString($queryString)
   {
     $this->queryString_ = $queryString;
+  }
+
+  public function setSupportAccountKey($supportAccountKey)
+  {
+    $this->supportAccountKey_ = $supportAccountKey;
   }
 
   /**
@@ -333,7 +341,8 @@ class SdsTHttpClient extends THttpClient
         "signedHeaders" => array_keys($headers),
         "userType" => $this->credential_->type,
         "secretKeyId" => $this->credential_->secretKeyId,
-        "signature" => $signature
+        "signature" => $signature,
+        "supportAccountKey" => $this->supportAccountKey_
       )
     );
 

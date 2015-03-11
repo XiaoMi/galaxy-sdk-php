@@ -276,6 +276,10 @@ class HttpAuthorizationHeader {
    */
   public $signedHeaders = array(
   );
+  /**
+   * @var bool
+   */
+  public $supportAccountKey = false;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -312,6 +316,10 @@ class HttpAuthorizationHeader {
             'type' => TType::STRING,
             ),
           ),
+        8 => array(
+          'var' => 'supportAccountKey',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -335,6 +343,9 @@ class HttpAuthorizationHeader {
       }
       if (isset($vals['signedHeaders'])) {
         $this->signedHeaders = $vals['signedHeaders'];
+      }
+      if (isset($vals['supportAccountKey'])) {
+        $this->supportAccountKey = $vals['supportAccountKey'];
       }
     }
   }
@@ -417,6 +428,13 @@ class HttpAuthorizationHeader {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 8:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->supportAccountKey);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -475,6 +493,11 @@ class HttpAuthorizationHeader {
         }
         $output->writeListEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->supportAccountKey !== null) {
+      $xfer += $output->writeFieldBegin('supportAccountKey', TType::BOOL, 8);
+      $xfer += $output->writeBool($this->supportAccountKey);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
