@@ -8,6 +8,7 @@ use SDS\Auth\Credential;
 use SDS\Auth\UserType;
 use SDS\Client\ClientFactory;
 use SDS\Client\DatumUtil;
+use SDS\Client\ExactLimitScanner;
 use SDS\Client\SdsException;
 use SDS\Client\TableScanner;
 use SDS\Common\Constant;
@@ -139,6 +140,22 @@ foreach ($scanner->iterator() as $k => $v) {
   $city = DatumUtil::value($v['cityId']);
   $score = DatumUtil::value($v['score']);
   echo "$k $city: $score\n";
+}
+
+$exactScan = new ScanRequest(array(
+  "tableName" => $tableName,
+  "startKey" => null, // null or unspecified means begin of the table
+  "stopKey" => null, // null or unspecified means end of the table
+  "attributes" => array("cityId"), // scan all attributes if not specified
+  "limit" => 5 // max records returned for each call, when used with TableScanner
+  // this will serve as batch size
+));
+
+$result = ExactLimitScanner::scan($tableClient, $exactScan);
+
+foreach ($result as $k => $v) {
+  $city = DatumUtil::value($v['cityId']);
+  echo "$k $city\n";
 }
 
 $adminClient->disableTable($tableName);
