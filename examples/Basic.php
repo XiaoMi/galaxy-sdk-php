@@ -15,6 +15,7 @@ use SDS\Common\Constant;
 use SDS\Errors\ErrorCode;
 use SDS\Table\DataType;
 use SDS\Table\GetRequest;
+use SDS\Table\IncrementRequest;
 use SDS\Table\KeySpec;
 use SDS\Table\ProvisionThroughput;
 use SDS\Table\PutRequest;
@@ -120,7 +121,22 @@ $get = new GetRequest(array(
 ));
 
 $result = $tableClient->get($get);
+echo "before increment:\n";
 print_r(DatumUtil::values($result->item));
+
+$inc = new IncrementRequest(array(
+  "tableName" => $tableName,
+  "keys" => array(
+    "cityId" => DatumUtil::datum($cities[0]),
+    "timestamp" => DatumUtil::datum($now->getTimestamp()),
+  ),
+  "amounts" => array("pm25" => DatumUtil::datum(10))
+));
+$tableClient->increment($inc);
+echo "after increase pm25 10, the result:\n";
+$result = $tableClient->get($get);
+print_r(DatumUtil::values($result->item));
+
 
 // scan table
 $scan = new ScanRequest(array(
@@ -157,6 +173,7 @@ foreach ($result as $k => $v) {
   $city = DatumUtil::value($v['cityId']);
   echo "$k $city\n";
 }
+
 
 $adminClient->disableTable($tableName);
 $adminClient->enableTable($tableName);
