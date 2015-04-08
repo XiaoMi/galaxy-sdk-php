@@ -7,10 +7,13 @@
 
 namespace SDS\Client;
 
+use SDS\Common\ThriftProtocol;
 use SDS\Common\Version;
 use SDS\Errors\Constant;
 use SDS\Errors\ServiceException;
 use Thrift\Protocol\TBinaryProtocol;
+use Thrift\Protocol\TJSONProtocol;
+use Thrift\Protocol\TCompactProtocol;
 
 class ClientFactory
 {
@@ -18,6 +21,7 @@ class ClientFactory
   private $version_;
   private $verbose_;
   private $httpClient_;
+  private $protocol_;
   protected $retryIfOperationTimeout_;
 
   /**
@@ -28,11 +32,12 @@ class ClientFactory
    * Don't set this when the operation is not idempotent.
    * @param bool $verbose
    */
-  public function __construct($credential, $retryIfOperationTimeout = false, $verbose = false)
+  public function __construct($credential, $retryIfOperationTimeout = false, $protocol = ThriftProtocol::TBINARY, $verbose = false)
   {
     $this->credential_ = $credential;
     $this->version_ = new Version();
     $this->verbose_ = $verbose;
+    $this->protocol_ = $protocol;
     $this->retryIfOperationTimeout_ = $retryIfOperationTimeout;
   }
 
@@ -117,12 +122,15 @@ class ClientFactory
       }
     }
 
-    $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout,
-      $connTimeout, $this->retryIfOperationTimeout_, $this->verbose_);
+    $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout, $connTimeout,
+        $this->protocol_, $this->retryIfOperationTimeout_, $this->verbose_);
     $httpClient->setSupportAccountKey($supportAccountKey);
     $this->httpClient_ = $httpClient;
     $httpClient->addHeaders(array('User-Agent' => $this->userAgent()));
-    $thriftProtocol = new TBinaryProtocol($httpClient);
+
+    $protocolMap = \SDS\Common\Constant::get('THRIFT_PROTOCOL_MAP');
+    $protocolClass = new \ReflectionClass('Thrift\Protocol\\' . $protocolMap[$this->protocol_]);
+    $thriftProtocol = $protocolClass->newInstanceArgs(array('trans' => $httpClient));
 
     return new $clientClass($thriftProtocol, $thriftProtocol);
   }

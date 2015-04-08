@@ -7,6 +7,7 @@
 
 namespace SDS\Client;
 
+use SDS\Common\ThriftProtocol;
 use SDS\Table\DataType;
 use SDS\Table\Datum;
 use SDS\Table\Value;
@@ -19,11 +20,18 @@ class DatumUtil
    * @return Datum
    * @throws \Exception in case of unsupported data type
    */
-  public static function datum($value, $type = null)
+  public static function datum($value, $type = null, $protocol = ThriftProtocol::TBINARY)
   {
     if (is_null($value)) {
       throw new \Exception("Datum must not be null");
     }
+
+    if ($protocol != ThriftProtocol::TCOMPACT &&
+        $protocol != ThriftProtocol::TBINARY &&
+        $protocol != ThriftProtocol::TJSON) {
+      throw new \Exception("Unknown thrift protocol type");
+    }
+
     $val = null;
     if (is_null($type)) {
       switch (gettype($value)) {
@@ -69,7 +77,12 @@ class DatumUtil
         $val = new Value(array("stringValue" => $value));
         break;
       case DataType::BINARY:
-        $val = new Value(array("binaryValue" => base64_encode($value)));
+        if ($protocol === ThriftProtocol::TBINARY ||
+            $protocol === ThriftProtocol::TCOMPACT) {
+          $val = new Value(array("binaryValue" => $value));
+        } else {
+          $val = new Value(array("binaryValue" => base64_encode($value)));
+        }
         break;
       case DataType::BOOL_SET:
         $val = new Value(array("boolSetValue" => $value));
@@ -104,10 +117,16 @@ class DatumUtil
    * @return mixed
    * @throws \Exception in case of unsupported data type
    */
-  public static function value($datum)
+  public static function value($datum, $protocol = ThriftProtocol::TBINARY)
   {
     if (is_null($datum)) {
       return null;
+    }
+
+    if ($protocol != ThriftProtocol::TCOMPACT &&
+        $protocol != ThriftProtocol::TBINARY &&
+        $protocol != ThriftProtocol::TJSON) {
+      throw new \Exception("Unknown thrift protocol type");
     }
 
     switch ($datum->type) {
@@ -118,7 +137,12 @@ class DatumUtil
       case DataType::STRING:
         return $datum->value->stringValue;
       case DataType::BINARY:
-        return base64_decode($datum->value->binaryValue);
+        if ($protocol === ThriftProtocol::TBINARY ||
+            $protocol === ThriftProtocol::TCOMPACT) {
+          return $datum->value->binaryValue;
+        } else {
+          return base64_decode($datum->value->binaryValue);
+        }
       case DataType::DOUBLE:
         return $datum->value->doubleValue;
       // the following data type is one way conversion since PHP does not support them
@@ -153,10 +177,10 @@ class DatumUtil
    * @param $data array of datum
    * @return array array of values
    */
-  public static function values($data) {
+  public static function values($data, $protocol = ThriftProtocol::TBINARY) {
     $values = array();
     foreach ($data as $field => $datum) {
-      $values[$field] = DatumUtil::value($datum);
+      $values[$field] = DatumUtil::value($datum, $protocol);
     }
     return $values;
   }

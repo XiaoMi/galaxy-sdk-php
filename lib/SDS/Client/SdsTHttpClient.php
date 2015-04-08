@@ -10,6 +10,7 @@ use SDS\Auth\Constant;
 use SDS\Auth\Credential;
 use SDS\Auth\HttpAuthorizationHeader;
 use SDS\Auth\MacAlgorithm;
+use SDS\Common\ThriftProtocol;
 use SDS\Errors\HttpStatusCode;
 use Thrift\Exception\TTransportException;
 use Thrift\Factory\TStringFuncFactory;
@@ -94,6 +95,7 @@ class SdsTHttpClient extends THttpClient
 
   protected $supportAccountKey_;
 
+  protected $protocol_;
   /**
    * Make a new HTTP client.
    *
@@ -101,7 +103,7 @@ class SdsTHttpClient extends THttpClient
    * @param string $url
    * @param bool $verbose
    */
-  public function __construct($credential, $url, $timeout, $connTimeout,
+  public function __construct($credential, $url, $timeout, $connTimeout, $protocol = ThriftProtocol::TBINARY,
                               $retryIfOperationTimeout = false, $verbose = false)
   {
     $parts = parse_url($url);
@@ -114,6 +116,7 @@ class SdsTHttpClient extends THttpClient
     $this->response_ = null;
     $this->timeout_ = $timeout;
     $this->connTimeout_ = $connTimeout;
+    $this->protocol_ = $protocol;
     $this->headers_ = array();
     $this->clockOffset_ = null;
     $this->readOffset_ = 0;
@@ -153,11 +156,21 @@ class SdsTHttpClient extends THttpClient
   /**
    * Set conn timeout
    *
-   * @param float $timeout
+   * @param float $connTimeout
    */
   public function setConnTimeoutSecs($connTimeout)
   {
     $this->connTimeout_ = $connTimeout;
+  }
+
+  /**
+   * Set thrift protocol
+   *
+   * @param enum $protocol
+   */
+  public function setProtocol($protocol)
+  {
+    $this->protocol_ = $protocol;
   }
 
   /**
@@ -233,10 +246,11 @@ class SdsTHttpClient extends THttpClient
    */
   public function flush()
   {
+    $headerMaps = \SDS\Common\Constant::get('THRIFT_HEADER_MAP');
     $defaultHeaders = array('Host' => $this->host_,
-      'Accept' => \SDS\Common\Constant::get('THRIFT_BINARY_HEADER'),
+      'Accept' => $headerMaps[$this->protocol_],
       'User-Agent' => 'PHP/THttpClient',
-      'Content-Type' => \SDS\Common\Constant::get('THRIFT_BINARY_HEADER'),
+      'Content-Type' => $headerMaps[$this->protocol_],
       'Content-Length' => TStringFuncFactory::create()->strlen($this->buf_));
     $headers = array();
     foreach (array_merge($defaultHeaders, $this->headers_, $this->getAuthenticationHeaders())

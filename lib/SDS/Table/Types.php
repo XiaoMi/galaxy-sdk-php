@@ -2783,6 +2783,10 @@ class SimpleCondition {
    * @var \SDS\Table\Datum
    */
   public $value = null;
+  /**
+   * @var bool
+   */
+  public $rowExist = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -2800,6 +2804,10 @@ class SimpleCondition {
           'type' => TType::STRUCT,
           'class' => '\SDS\Table\Datum',
           ),
+        4 => array(
+          'var' => 'rowExist',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -2811,6 +2819,9 @@ class SimpleCondition {
       }
       if (isset($vals['value'])) {
         $this->value = $vals['value'];
+      }
+      if (isset($vals['rowExist'])) {
+        $this->rowExist = $vals['rowExist'];
       }
     }
   }
@@ -2856,6 +2867,13 @@ class SimpleCondition {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 4:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->rowExist);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -2885,6 +2903,11 @@ class SimpleCondition {
       }
       $xfer += $output->writeFieldBegin('value', TType::STRUCT, 3);
       $xfer += $this->value->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->rowExist !== null) {
+      $xfer += $output->writeFieldBegin('rowExist', TType::BOOL, 4);
+      $xfer += $output->writeBool($this->rowExist);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();

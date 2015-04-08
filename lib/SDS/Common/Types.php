@@ -63,7 +63,7 @@ class Version {
    * 
    * @var string
    */
-  public $patch = "1da06945";
+  public $patch = "115bf157";
   /**
    * 附加信息
    * 
@@ -211,7 +211,11 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $THRIFT_JSON_HEADER;
   static protected $THRIFT_COMPACT_HEADER;
   static protected $THRIFT_BINARY_HEADER;
+  static protected $THRIFT_JSON_PROTOCOL_CLASS;
+  static protected $THRIFT_BINARY_PROTOCOL_CLASS;
+  static protected $THRIFT_COMPACT_PROTOCOL_CLASS;
   static protected $THRIFT_HEADER_MAP;
+  static protected $THRIFT_PROTOCOL_MAP;
   static protected $HEADER_THRIFT_MAP;
   static protected $HK_REQUEST_TIMEOUT;
   static protected $HK_ERROR_CODE_HEADER;
@@ -313,11 +317,31 @@ final class Constant extends \Thrift\Type\TConstant {
     return "application/x-thrift-binary";
   }
 
+  static protected function init_THRIFT_JSON_PROTOCOL_CLASS() {
+    return "TJSONProtocol";
+  }
+
+  static protected function init_THRIFT_BINARY_PROTOCOL_CLASS() {
+    return "TBinaryProtocol";
+  }
+
+  static protected function init_THRIFT_COMPACT_PROTOCOL_CLASS() {
+    return "TCompactProtocol";
+  }
+
   static protected function init_THRIFT_HEADER_MAP() {
     return array(
             0 => "application/x-thrift-compact",
             1 => "application/x-thrift-json",
             2 => "application/x-thrift-binary",
+    );
+  }
+
+  static protected function init_THRIFT_PROTOCOL_MAP() {
+    return array(
+            0 => "TCompactProtocol",
+            1 => "TJSONProtocol",
+            2 => "TBinaryProtocol",
     );
   }
 

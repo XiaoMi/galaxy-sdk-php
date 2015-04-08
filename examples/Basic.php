@@ -12,7 +12,11 @@ use SDS\Client\ExactLimitScanner;
 use SDS\Client\SdsException;
 use SDS\Client\TableScanner;
 use SDS\Common\Constant;
+use SDS\Common\ThriftProtocol;
 use SDS\Errors\ErrorCode;
+use SDS\Table\BatchOp;
+use SDS\Table\BatchRequest;
+use SDS\Table\BatchRequestItem;
 use SDS\Table\DataType;
 use SDS\Table\GetRequest;
 use SDS\Table\IncrementRequest;
@@ -36,7 +40,15 @@ $credential = new Credential(
     "secretKey" => $appSecret
   )
 );
-$clientFactory = new ClientFactory($credential, true, false); // verbose off
+// based on Binary transport protocol as default
+$clientFactory = new ClientFactory($credential, true); // verbose off
+
+// based on JSON transport protocol
+// $clientFactory = new ClientFactory($credential, true, ThriftProtocol::TJSON); // verbose off
+
+// based on Compact Binary transport protocol
+// $clientFactory = new ClientFactory($credential, true, ThriftProtocol::TCOMPACT); // verbose off
+
 $endpoint = "http://cnbj-s0.sds.api.xiaomi.com";
 $adminClient = $clientFactory->newAdminClient($endpoint .
   Constant::get('ADMIN_SERVICE_PATH'),
