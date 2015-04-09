@@ -32,7 +32,7 @@ class ClientFactory
    * Don't set this when the operation is not idempotent.
    * @param bool $verbose
    */
-  public function __construct($credential, $retryIfOperationTimeout = false, $protocol = ThriftProtocol::TBINARY, $verbose = false)
+  public function __construct($credential, $retryIfOperationTimeout = false, $verbose = false, $protocol = ThriftProtocol::TBINARY)
   {
     $this->credential_ = $credential;
     $this->version_ = new Version();
