@@ -63,7 +63,7 @@ class Version {
    * 
    * @var string
    */
-  public $patch = "115bf157";
+  public $patch = "fee5636b";
   /**
    * 附加信息
    * 
