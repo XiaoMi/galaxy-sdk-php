@@ -260,26 +260,36 @@ final class TableState {
    */
   const DISABLED = 5;
   /**
-   * 正在删除，不可操作
+   * 正在删除，不可见
    */
-  const DELETING = 6;
+  const DROPPING = 6;
   /**
    * 已删除，不可见
    */
-  const DELETED = 7;
+  const DROPPED = 7;
+  /**
+   * 正在延迟删除，不可操作
+   */
+  const LAZY_DROPPING = 8;
   /**
    * 延迟删除, 可见
    */
-  const LAZY_DELETE = 8;
+  const LAZY_DROP = 9;
+  /**
+   * 正在恢复, 不可操作
+   */
+  const RESTORING = 10;
   static public $__names = array(
     1 => 'CREATING',
     2 => 'ENABLING',
     3 => 'ENABLED',
     4 => 'DISABLING',
     5 => 'DISABLED',
-    6 => 'DELETING',
-    7 => 'DELETED',
-    8 => 'LAZY_DELETE',
+    6 => 'DROPPING',
+    7 => 'DROPPED',
+    8 => 'LAZY_DROPPING',
+    9 => 'LAZY_DROP',
+    10 => 'RESTORING',
   );
 }
 
