@@ -18,6 +18,32 @@ use Thrift\Exception\TApplicationException;
 
 
 /**
+ * 客户端metrics的类型
+ */
+final class ClientMetricType {
+  /**
+   * 客户端请求延迟
+   */
+  const Letency = 1;
+  static public $__names = array(
+    1 => 'Letency',
+  );
+}
+
+/**
+ * 客户端metrics请求延迟的类型
+ */
+final class LatencyMetricType {
+  /**
+   * 客户端执行请求花费的时间
+   */
+  const ExecutionTime = 1;
+  static public $__names = array(
+    1 => 'ExecutionTime',
+  );
+}
+
+/**
  * 系统统计指标类型
  */
 final class MetricKey {
@@ -472,6 +498,270 @@ class AppInfo {
 }
 
 /**
+ * 客户端metrics数据结构
+ */
+class MetricData {
+  static $_TSPEC;
+
+  /**
+   * 设置/获取metrics的类型
+   * 
+   * @var int
+   */
+  public $clientMetricType = null;
+  /**
+   * 客户端请求调用的接口名称.实际计算的数据类型
+   * e.g. createTable.ExecutionTime
+   * 
+   * @var string
+   */
+  public $metricName = null;
+  /**
+   * 实际计算的数值
+   * 
+   * @var int
+   */
+  public $value = null;
+  /**
+   * 客户端请求返回的时间戳
+   * 
+   * @var int
+   */
+  public $timeStamp = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'clientMetricType',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'metricName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'value',
+          'type' => TType::I64,
+          ),
+        4 => array(
+          'var' => 'timeStamp',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['clientMetricType'])) {
+        $this->clientMetricType = $vals['clientMetricType'];
+      }
+      if (isset($vals['metricName'])) {
+        $this->metricName = $vals['metricName'];
+      }
+      if (isset($vals['value'])) {
+        $this->value = $vals['value'];
+      }
+      if (isset($vals['timeStamp'])) {
+        $this->timeStamp = $vals['timeStamp'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MetricData';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->clientMetricType);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->metricName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->value);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->timeStamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MetricData');
+    if ($this->clientMetricType !== null) {
+      $xfer += $output->writeFieldBegin('clientMetricType', TType::I32, 1);
+      $xfer += $output->writeI32($this->clientMetricType);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->metricName !== null) {
+      $xfer += $output->writeFieldBegin('metricName', TType::STRING, 2);
+      $xfer += $output->writeString($this->metricName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->value !== null) {
+      $xfer += $output->writeFieldBegin('value', TType::I64, 3);
+      $xfer += $output->writeI64($this->value);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->timeStamp !== null) {
+      $xfer += $output->writeFieldBegin('timeStamp', TType::I64, 4);
+      $xfer += $output->writeI64($this->timeStamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 客户端用于传输metrics的数据结构
+ */
+class ClientMetrics {
+  static $_TSPEC;
+
+  /**
+   * 添加/获取客户端metrics数据
+   * 
+   * @var \SDS\Admin\MetricData[]
+   */
+  public $metricDataList = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'metricDataList',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Admin\MetricData',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['metricDataList'])) {
+        $this->metricDataList = $vals['metricDataList'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ClientMetrics';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::LST) {
+            $this->metricDataList = array();
+            $_size18 = 0;
+            $_etype21 = 0;
+            $xfer += $input->readListBegin($_etype21, $_size18);
+            for ($_i22 = 0; $_i22 < $_size18; ++$_i22)
+            {
+              $elem23 = null;
+              $elem23 = new \SDS\Admin\MetricData();
+              $xfer += $elem23->read($input);
+              $this->metricDataList []= $elem23;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ClientMetrics');
+    if ($this->metricDataList !== null) {
+      if (!is_array($this->metricDataList)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('metricDataList', TType::LST, 1);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->metricDataList));
+        {
+          foreach ($this->metricDataList as $iter24)
+          {
+            $xfer += $iter24->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
  * 统计指标查询请求
  */
 class MetricQueryRequest {
@@ -820,17 +1110,17 @@ class TimeSeriesData {
         case 4:
           if ($ftype == TType::MAP) {
             $this->data = array();
-            $_size18 = 0;
-            $_ktype19 = 0;
-            $_vtype20 = 0;
-            $xfer += $input->readMapBegin($_ktype19, $_vtype20, $_size18);
-            for ($_i22 = 0; $_i22 < $_size18; ++$_i22)
+            $_size25 = 0;
+            $_ktype26 = 0;
+            $_vtype27 = 0;
+            $xfer += $input->readMapBegin($_ktype26, $_vtype27, $_size25);
+            for ($_i29 = 0; $_i29 < $_size25; ++$_i29)
             {
-              $key23 = 0;
-              $val24 = 0.0;
-              $xfer += $input->readI64($key23);
-              $xfer += $input->readDouble($val24);
-              $this->data[$key23] = $val24;
+              $key30 = 0;
+              $val31 = 0.0;
+              $xfer += $input->readI64($key30);
+              $xfer += $input->readDouble($val31);
+              $this->data[$key30] = $val31;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -873,10 +1163,10 @@ class TimeSeriesData {
       {
         $output->writeMapBegin(TType::I64, TType::DOUBLE, count($this->data));
         {
-          foreach ($this->data as $kiter25 => $viter26)
+          foreach ($this->data as $kiter32 => $viter33)
           {
-            $xfer += $output->writeI64($kiter25);
-            $xfer += $output->writeDouble($viter26);
+            $xfer += $output->writeI64($kiter32);
+            $xfer += $output->writeDouble($viter33);
           }
         }
         $output->writeMapEnd();

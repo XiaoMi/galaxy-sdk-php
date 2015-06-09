@@ -181,6 +181,13 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function getTableSize($tableName);
+  /**
+   * 上传客户端metrics
+   * 
+   * @param \SDS\Admin\ClientMetrics $clientMetrics
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function putClientMetrics(\SDS\Admin\ClientMetrics $clientMetrics);
 }
 
 class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Admin\AdminServiceIf {
@@ -1249,6 +1256,57 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("getTableSize failed: unknown result");
   }
 
+  public function putClientMetrics(\SDS\Admin\ClientMetrics $clientMetrics)
+  {
+    $this->send_putClientMetrics($clientMetrics);
+    $this->recv_putClientMetrics();
+  }
+
+  public function send_putClientMetrics(\SDS\Admin\ClientMetrics $clientMetrics)
+  {
+    $args = new \SDS\Admin\AdminService_putClientMetrics_args();
+    $args->clientMetrics = $clientMetrics;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'putClientMetrics', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('putClientMetrics', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_putClientMetrics()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_putClientMetrics_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_putClientMetrics_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    return;
+  }
+
 }
 
 // HELPER FUNCTIONS AND STRUCTURES
@@ -1703,15 +1761,15 @@ class AdminService_findAllApps_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size27 = 0;
-            $_etype30 = 0;
-            $xfer += $input->readListBegin($_etype30, $_size27);
-            for ($_i31 = 0; $_i31 < $_size27; ++$_i31)
+            $_size34 = 0;
+            $_etype37 = 0;
+            $xfer += $input->readListBegin($_etype37, $_size34);
+            for ($_i38 = 0; $_i38 < $_size34; ++$_i38)
             {
-              $elem32 = null;
-              $elem32 = new \SDS\Admin\AppInfo();
-              $xfer += $elem32->read($input);
-              $this->success []= $elem32;
+              $elem39 = null;
+              $elem39 = new \SDS\Admin\AppInfo();
+              $xfer += $elem39->read($input);
+              $this->success []= $elem39;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1747,9 +1805,9 @@ class AdminService_findAllApps_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter33)
+          foreach ($this->success as $iter40)
           {
-            $xfer += $iter33->write($output);
+            $xfer += $iter40->write($output);
           }
         }
         $output->writeListEnd();
@@ -1881,15 +1939,15 @@ class AdminService_findAllTables_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size34 = 0;
-            $_etype37 = 0;
-            $xfer += $input->readListBegin($_etype37, $_size34);
-            for ($_i38 = 0; $_i38 < $_size34; ++$_i38)
+            $_size41 = 0;
+            $_etype44 = 0;
+            $xfer += $input->readListBegin($_etype44, $_size41);
+            for ($_i45 = 0; $_i45 < $_size41; ++$_i45)
             {
-              $elem39 = null;
-              $elem39 = new \SDS\Table\TableInfo();
-              $xfer += $elem39->read($input);
-              $this->success []= $elem39;
+              $elem46 = null;
+              $elem46 = new \SDS\Table\TableInfo();
+              $xfer += $elem46->read($input);
+              $this->success []= $elem46;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1925,9 +1983,9 @@ class AdminService_findAllTables_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter40)
+          foreach ($this->success as $iter47)
           {
-            $xfer += $iter40->write($output);
+            $xfer += $iter47->write($output);
           }
         }
         $output->writeListEnd();
@@ -2058,14 +2116,14 @@ class AdminService_cleanAllLazyDroppedTables_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size41 = 0;
-            $_etype44 = 0;
-            $xfer += $input->readListBegin($_etype44, $_size41);
-            for ($_i45 = 0; $_i45 < $_size41; ++$_i45)
+            $_size48 = 0;
+            $_etype51 = 0;
+            $xfer += $input->readListBegin($_etype51, $_size48);
+            for ($_i52 = 0; $_i52 < $_size48; ++$_i52)
             {
-              $elem46 = null;
-              $xfer += $input->readString($elem46);
-              $this->success []= $elem46;
+              $elem53 = null;
+              $xfer += $input->readString($elem53);
+              $this->success []= $elem53;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2101,9 +2159,9 @@ class AdminService_cleanAllLazyDroppedTables_result {
       {
         $output->writeListBegin(TType::STRING, count($this->success));
         {
-          foreach ($this->success as $iter47)
+          foreach ($this->success as $iter54)
           {
-            $xfer += $output->writeString($iter47);
+            $xfer += $output->writeString($iter54);
           }
         }
         $output->writeListEnd();
@@ -3944,27 +4002,6 @@ class AdminService_getTableSplits_args {
         case 2:
           if ($ftype == TType::MAP) {
             $this->startKey = array();
-            $_size48 = 0;
-            $_ktype49 = 0;
-            $_vtype50 = 0;
-            $xfer += $input->readMapBegin($_ktype49, $_vtype50, $_size48);
-            for ($_i52 = 0; $_i52 < $_size48; ++$_i52)
-            {
-              $key53 = '';
-              $val54 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key53);
-              $val54 = new \SDS\Table\Datum();
-              $xfer += $val54->read($input);
-              $this->startKey[$key53] = $val54;
-            }
-            $xfer += $input->readMapEnd();
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::MAP) {
-            $this->stopKey = array();
             $_size55 = 0;
             $_ktype56 = 0;
             $_vtype57 = 0;
@@ -3976,7 +4013,28 @@ class AdminService_getTableSplits_args {
               $xfer += $input->readString($key60);
               $val61 = new \SDS\Table\Datum();
               $xfer += $val61->read($input);
-              $this->stopKey[$key60] = $val61;
+              $this->startKey[$key60] = $val61;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::MAP) {
+            $this->stopKey = array();
+            $_size62 = 0;
+            $_ktype63 = 0;
+            $_vtype64 = 0;
+            $xfer += $input->readMapBegin($_ktype63, $_vtype64, $_size62);
+            for ($_i66 = 0; $_i66 < $_size62; ++$_i66)
+            {
+              $key67 = '';
+              $val68 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key67);
+              $val68 = new \SDS\Table\Datum();
+              $xfer += $val68->read($input);
+              $this->stopKey[$key67] = $val68;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4009,10 +4067,10 @@ class AdminService_getTableSplits_args {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->startKey));
         {
-          foreach ($this->startKey as $kiter62 => $viter63)
+          foreach ($this->startKey as $kiter69 => $viter70)
           {
-            $xfer += $output->writeString($kiter62);
-            $xfer += $viter63->write($output);
+            $xfer += $output->writeString($kiter69);
+            $xfer += $viter70->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4027,10 +4085,10 @@ class AdminService_getTableSplits_args {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->stopKey));
         {
-          foreach ($this->stopKey as $kiter64 => $viter65)
+          foreach ($this->stopKey as $kiter71 => $viter72)
           {
-            $xfer += $output->writeString($kiter64);
-            $xfer += $viter65->write($output);
+            $xfer += $output->writeString($kiter71);
+            $xfer += $viter72->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4107,15 +4165,15 @@ class AdminService_getTableSplits_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size66 = 0;
-            $_etype69 = 0;
-            $xfer += $input->readListBegin($_etype69, $_size66);
-            for ($_i70 = 0; $_i70 < $_size66; ++$_i70)
+            $_size73 = 0;
+            $_etype76 = 0;
+            $xfer += $input->readListBegin($_etype76, $_size73);
+            for ($_i77 = 0; $_i77 < $_size73; ++$_i77)
             {
-              $elem71 = null;
-              $elem71 = new \SDS\Table\TableSplit();
-              $xfer += $elem71->read($input);
-              $this->success []= $elem71;
+              $elem78 = null;
+              $elem78 = new \SDS\Table\TableSplit();
+              $xfer += $elem78->read($input);
+              $this->success []= $elem78;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4151,9 +4209,9 @@ class AdminService_getTableSplits_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter72)
+          foreach ($this->success as $iter79)
           {
-            $xfer += $iter72->write($output);
+            $xfer += $iter79->write($output);
           }
         }
         $output->writeListEnd();
@@ -4408,15 +4466,15 @@ class AdminService_queryMetrics_args {
         case 1:
           if ($ftype == TType::LST) {
             $this->queries = array();
-            $_size73 = 0;
-            $_etype76 = 0;
-            $xfer += $input->readListBegin($_etype76, $_size73);
-            for ($_i77 = 0; $_i77 < $_size73; ++$_i77)
+            $_size80 = 0;
+            $_etype83 = 0;
+            $xfer += $input->readListBegin($_etype83, $_size80);
+            for ($_i84 = 0; $_i84 < $_size80; ++$_i84)
             {
-              $elem78 = null;
-              $elem78 = new \SDS\Admin\MetricQueryRequest();
-              $xfer += $elem78->read($input);
-              $this->queries []= $elem78;
+              $elem85 = null;
+              $elem85 = new \SDS\Admin\MetricQueryRequest();
+              $xfer += $elem85->read($input);
+              $this->queries []= $elem85;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4444,9 +4502,9 @@ class AdminService_queryMetrics_args {
       {
         $output->writeListBegin(TType::STRUCT, count($this->queries));
         {
-          foreach ($this->queries as $iter79)
+          foreach ($this->queries as $iter86)
           {
-            $xfer += $iter79->write($output);
+            $xfer += $iter86->write($output);
           }
         }
         $output->writeListEnd();
@@ -4523,15 +4581,15 @@ class AdminService_queryMetrics_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size80 = 0;
-            $_etype83 = 0;
-            $xfer += $input->readListBegin($_etype83, $_size80);
-            for ($_i84 = 0; $_i84 < $_size80; ++$_i84)
+            $_size87 = 0;
+            $_etype90 = 0;
+            $xfer += $input->readListBegin($_etype90, $_size87);
+            for ($_i91 = 0; $_i91 < $_size87; ++$_i91)
             {
-              $elem85 = null;
-              $elem85 = new \SDS\Admin\TimeSeriesData();
-              $xfer += $elem85->read($input);
-              $this->success []= $elem85;
+              $elem92 = null;
+              $elem92 = new \SDS\Admin\TimeSeriesData();
+              $xfer += $elem92->read($input);
+              $this->success []= $elem92;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4567,9 +4625,9 @@ class AdminService_queryMetrics_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter86)
+          foreach ($this->success as $iter93)
           {
-            $xfer += $iter86->write($output);
+            $xfer += $iter93->write($output);
           }
         }
         $output->writeListEnd();
@@ -4701,15 +4759,15 @@ class AdminService_findAllAppInfo_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size87 = 0;
-            $_etype90 = 0;
-            $xfer += $input->readListBegin($_etype90, $_size87);
-            for ($_i91 = 0; $_i91 < $_size87; ++$_i91)
+            $_size94 = 0;
+            $_etype97 = 0;
+            $xfer += $input->readListBegin($_etype97, $_size94);
+            for ($_i98 = 0; $_i98 < $_size94; ++$_i98)
             {
-              $elem92 = null;
-              $elem92 = new \SDS\Admin\AppInfo();
-              $xfer += $elem92->read($input);
-              $this->success []= $elem92;
+              $elem99 = null;
+              $elem99 = new \SDS\Admin\AppInfo();
+              $xfer += $elem99->read($input);
+              $this->success []= $elem99;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4745,9 +4803,9 @@ class AdminService_findAllAppInfo_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter93)
+          foreach ($this->success as $iter100)
           {
-            $xfer += $iter93->write($output);
+            $xfer += $iter100->write($output);
           }
         }
         $output->writeListEnd();
@@ -4929,6 +4987,163 @@ class AdminService_getTableSize_result {
       $xfer += $output->writeI64($this->success);
       $xfer += $output->writeFieldEnd();
     }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_putClientMetrics_args {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Admin\ClientMetrics
+   */
+  public $clientMetrics = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'clientMetrics',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Admin\ClientMetrics',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['clientMetrics'])) {
+        $this->clientMetrics = $vals['clientMetrics'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_putClientMetrics_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->clientMetrics = new \SDS\Admin\ClientMetrics();
+            $xfer += $this->clientMetrics->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_putClientMetrics_args');
+    if ($this->clientMetrics !== null) {
+      if (!is_object($this->clientMetrics)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('clientMetrics', TType::STRUCT, 1);
+      $xfer += $this->clientMetrics->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_putClientMetrics_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_putClientMetrics_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_putClientMetrics_result');
     if ($this->se !== null) {
       $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
       $xfer += $this->se->write($output);

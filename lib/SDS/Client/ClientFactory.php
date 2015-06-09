@@ -11,6 +11,8 @@ use SDS\Common\ThriftProtocol;
 use SDS\Common\Version;
 use SDS\Errors\Constant;
 use SDS\Errors\ServiceException;
+use SDS\Metrics\MetricsCollector;
+use SDS\Metrics\RequestMetrics;
 use Thrift\Protocol\TBinaryProtocol;
 use Thrift\Protocol\TJSONProtocol;
 use Thrift\Protocol\TCompactProtocol;
@@ -23,6 +25,8 @@ class ClientFactory
   private $httpClient_;
   private $protocol_;
   protected $retryIfOperationTimeout_;
+  private $metricsCollector_;
+  private $isMetricEnabled_;
 
   /**
    * @param \SDS\Auth\Credential $credential
@@ -32,13 +36,18 @@ class ClientFactory
    * Don't set this when the operation is not idempotent.
    * @param bool $verbose
    */
-  public function __construct($credential, $retryIfOperationTimeout = false, $verbose = false, $protocol = ThriftProtocol::TBINARY)
+  public function __construct($credential, $retryIfOperationTimeout = false,
+                              $verbose = false, $isMetricEnabled = false,
+                              $protocol = ThriftProtocol::TBINARY
+  )
   {
     $this->credential_ = $credential;
     $this->version_ = new Version();
     $this->verbose_ = $verbose;
     $this->protocol_ = $protocol;
     $this->retryIfOperationTimeout_ = $retryIfOperationTimeout;
+    $this->isMetricEnabled_ = $isMetricEnabled;
+    $this->metricsCollector_ = null;
   }
 
   /**
@@ -47,7 +56,7 @@ class ClientFactory
   public function newDefaultAuthClient($supportAccountKey = false)
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
-      Constant::get('TABLE_AUTH_PATH');
+        Constant::get('TABLE_AUTH_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
     return $this->newAuthClient($url, $timeout, $connTimeout, $supportAccountKey);
@@ -61,8 +70,8 @@ class ClientFactory
   public function newAuthClient($url, $timeout, $connTimeout, $supportAccountKey = false)
   {
     $client = $this->getClient('SDS\Auth\AuthServiceClient', $url, $timeout, $connTimeout,
-      $supportAccountKey);
-    return new RetryableClient($client, $this->httpClient_);
+        $supportAccountKey);
+    return new RetryableClient($client, $this->httpClient_, $this->metricsCollector_);
   }
 
   /**
@@ -71,7 +80,7 @@ class ClientFactory
   public function newDefaultAdminClient($supportAccountKey = false)
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
-      Constant::get('ADMIN_SERVICE_PATH');
+        Constant::get('ADMIN_SERVICE_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
     return $this->newAdminClient($url, $timeout, $connTimeout, $supportAccountKey);
@@ -84,8 +93,8 @@ class ClientFactory
   public function newAdminClient($url, $timeout, $connTimeout, $supportAccountKey = false)
   {
     $client = $this->getClient('SDS\Admin\AdminServiceClient', $url, $timeout, $connTimeout,
-      $supportAccountKey);
-    return new RetryableClient($client, $this->httpClient_);
+        $supportAccountKey);
+    return new RetryableClient($client, $this->httpClient_, $this->metricsCollector_);
   }
 
   /**
@@ -94,7 +103,7 @@ class ClientFactory
   public function newDefaultTableClient($supportAccountKey = false)
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
-      Constant::get('TABLE_SERVICE_PATH');
+        Constant::get('TABLE_SERVICE_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
     return $this->newTableClient($url, $timeout, $connTimeout, $supportAccountKey);
@@ -107,8 +116,8 @@ class ClientFactory
   public function newTableClient($url, $timeout, $connTimeout, $supportAccountKey = false)
   {
     $client = $this->getClient('SDS\Table\TableServiceClient', $url, $timeout, $connTimeout,
-      $supportAccountKey);
-    return new RetryableClient($client, $this->httpClient_);
+        $supportAccountKey);
+    return new RetryableClient($client, $this->httpClient_, $this->metricsCollector_);
   }
 
   protected function getClient($clientClass, $url, $timeout, $connTimeout, $supportAccountKey)
@@ -121,7 +130,6 @@ class ClientFactory
         $parts['port'] = 80;
       }
     }
-
     $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout, $connTimeout,
         $this->protocol_, $this->retryIfOperationTimeout_, $this->verbose_);
     $httpClient->setSupportAccountKey($supportAccountKey);
@@ -131,7 +139,16 @@ class ClientFactory
     $protocolMap = \SDS\Common\Constant::get('THRIFT_PROTOCOL_MAP');
     $protocolClass = new \ReflectionClass('Thrift\Protocol\\' . $protocolMap[$this->protocol_]);
     $thriftProtocol = $protocolClass->newInstanceArgs(array('trans' => $httpClient));
-
+    if ($this->isMetricEnabled_ && $this->metricsCollector_ == null) {
+      $adminClientClass = 'SDS\Admin\AdminServiceClient';
+      $getAdminClient = new $adminClientClass($thriftProtocol, $thriftProtocol);
+      $metricAdminClient = new RetryableClient($getAdminClient, $this->httpClient_, 1, null);
+      $this->metricsCollector_ = new MetricsCollector($metricAdminClient);
+      $httpClient->setMetricsCollector($this->metricsCollector_);
+      $this->metricsCollector_->start();
+      $thriftProtocol = $protocolClass->newInstanceArgs(array('trans' => $httpClient));
+      $this->httpClient_ = $httpClient;
+    }
     return new $clientClass($thriftProtocol, $thriftProtocol);
   }
 
@@ -152,12 +169,15 @@ class RetryableClient
   private $maxRetry_;
   private $client_;
   private $httpClient_;
+  private $metricsCollector_;
 
-  public function __construct($client, $httpClient, $maxRetry = 1)
+  public function __construct($client, $httpClient, $maxRetry = 1,
+                              $metricsCollector)
   {
     $this->client_ = $client;
     $this->httpClient_ = $httpClient;
     $this->maxRetry_ = $maxRetry;
+    $this->metricsCollector_ = $metricsCollector;
   }
 
   public function __call($name, $arguments)
@@ -168,17 +188,26 @@ class RetryableClient
     $retry = 0;
     while (true) {
       $ex = null;
+      $requestMetrics = new RequestMetrics();
       try {
-        return $method->invokeArgs($this->client_, $arguments);
+        if ($this->metricsCollector_ != null) {
+          $requestMetrics->setQueryString($queryString);
+          $requestMetrics->startEvent(RequestMetrics::EXECUTION_TIME);
+        }
+        $result = $method->invokeArgs($this->client_, $arguments);
+        $this->doCollectMetrics($requestMetrics);
+        return $result;
       } catch (SdsException $e) {
         $ex = $e;
+        $this->doCollectMetrics($requestMetrics);
       } catch (ServiceException $se) {
         $ex = SdsException::createServiceException("service",
-          $se->errorCode,
-          $se->errorMessage,
-          $se->details,
-          $se->callId,
-          $se->requestId);
+            $se->errorCode,
+            $se->errorMessage,
+            $se->details,
+            $se->callId,
+            $se->requestId);
+        $this->doCollectMetrics($requestMetrics);
       }
       $sleepMs = $this->backoffTime($ex->errorCode);
       if ($retry >= $this->maxRetry_ || $sleepMs < 0) {
@@ -187,7 +216,16 @@ class RetryableClient
       usleep(1000 * ($sleepMs << $retry));
       $retry++;
     }
+
     return null;
+  }
+
+  private function doCollectMetrics($requestMetrics)
+  {
+    if ($this->metricsCollector_ != null) {
+      $requestMetrics->endEvent(RequestMetrics::EXECUTION_TIME);
+      $this->metricsCollector_->collect($requestMetrics);
+    }
   }
 
   private function backoffTime($errorCode)

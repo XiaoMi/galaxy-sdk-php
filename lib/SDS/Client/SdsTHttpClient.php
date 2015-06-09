@@ -188,6 +188,10 @@ class SdsTHttpClient extends THttpClient
     $this->supportAccountKey_ = $supportAccountKey;
   }
 
+  public function setMetricsCollector($metricsCollector){
+    $this->metricsCollector_ = $metricsCollector;
+  }
+
   /**
    * Whether this transport is open.
    *
