@@ -103,6 +103,13 @@ class QueueAttribute {
    * @var int
    */
   public $partitionNumber = null;
+  /**
+   * User-defined attributes
+   * 
+   * 
+   * @var array
+   */
+  public $userAttributes = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -135,6 +142,18 @@ class QueueAttribute {
           'var' => 'partitionNumber',
           'type' => TType::I32,
           ),
+        8 => array(
+          'var' => 'userAttributes',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRING,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRING,
+            ),
+          ),
         );
     }
     if (is_array($vals)) {
@@ -158,6 +177,9 @@ class QueueAttribute {
       }
       if (isset($vals['partitionNumber'])) {
         $this->partitionNumber = $vals['partitionNumber'];
+      }
+      if (isset($vals['userAttributes'])) {
+        $this->userAttributes = $vals['userAttributes'];
       }
     }
   }
@@ -230,6 +252,26 @@ class QueueAttribute {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 8:
+          if ($ftype == TType::MAP) {
+            $this->userAttributes = array();
+            $_size0 = 0;
+            $_ktype1 = 0;
+            $_vtype2 = 0;
+            $xfer += $input->readMapBegin($_ktype1, $_vtype2, $_size0);
+            for ($_i4 = 0; $_i4 < $_size0; ++$_i4)
+            {
+              $key5 = '';
+              $val6 = '';
+              $xfer += $input->readString($key5);
+              $xfer += $input->readString($val6);
+              $this->userAttributes[$key5] = $val6;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -276,6 +318,24 @@ class QueueAttribute {
     if ($this->partitionNumber !== null) {
       $xfer += $output->writeFieldBegin('partitionNumber', TType::I32, 7);
       $xfer += $output->writeI32($this->partitionNumber);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->userAttributes !== null) {
+      if (!is_array($this->userAttributes)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('userAttributes', TType::MAP, 8);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRING, count($this->userAttributes));
+        {
+          foreach ($this->userAttributes as $kiter7 => $viter8)
+          {
+            $xfer += $output->writeString($kiter7);
+            $xfer += $output->writeString($viter8);
+          }
+        }
+        $output->writeMapEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1412,14 +1472,14 @@ class ListQueueResponse {
         case 1:
           if ($ftype == TType::LST) {
             $this->queueName = array();
-            $_size0 = 0;
-            $_etype3 = 0;
-            $xfer += $input->readListBegin($_etype3, $_size0);
-            for ($_i4 = 0; $_i4 < $_size0; ++$_i4)
+            $_size9 = 0;
+            $_etype12 = 0;
+            $xfer += $input->readListBegin($_etype12, $_size9);
+            for ($_i13 = 0; $_i13 < $_size9; ++$_i13)
             {
-              $elem5 = null;
-              $xfer += $input->readString($elem5);
-              $this->queueName []= $elem5;
+              $elem14 = null;
+              $xfer += $input->readString($elem14);
+              $this->queueName []= $elem14;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1447,9 +1507,9 @@ class ListQueueResponse {
       {
         $output->writeListBegin(TType::STRING, count($this->queueName));
         {
-          foreach ($this->queueName as $iter6)
+          foreach ($this->queueName as $iter15)
           {
-            $xfer += $output->writeString($iter6);
+            $xfer += $output->writeString($iter15);
           }
         }
         $output->writeListEnd();
@@ -2134,17 +2194,17 @@ class ListPermissionsResponse {
         case 1:
           if ($ftype == TType::MAP) {
             $this->permissionList = array();
-            $_size7 = 0;
-            $_ktype8 = 0;
-            $_vtype9 = 0;
-            $xfer += $input->readMapBegin($_ktype8, $_vtype9, $_size7);
-            for ($_i11 = 0; $_i11 < $_size7; ++$_i11)
+            $_size16 = 0;
+            $_ktype17 = 0;
+            $_vtype18 = 0;
+            $xfer += $input->readMapBegin($_ktype17, $_vtype18, $_size16);
+            for ($_i20 = 0; $_i20 < $_size16; ++$_i20)
             {
-              $key12 = '';
-              $val13 = 0;
-              $xfer += $input->readString($key12);
-              $xfer += $input->readI32($val13);
-              $this->permissionList[$key12] = $val13;
+              $key21 = '';
+              $val22 = 0;
+              $xfer += $input->readString($key21);
+              $xfer += $input->readI32($val22);
+              $this->permissionList[$key21] = $val22;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -2172,10 +2232,10 @@ class ListPermissionsResponse {
       {
         $output->writeMapBegin(TType::STRING, TType::I32, count($this->permissionList));
         {
-          foreach ($this->permissionList as $kiter14 => $viter15)
+          foreach ($this->permissionList as $kiter23 => $viter24)
           {
-            $xfer += $output->writeString($kiter14);
-            $xfer += $output->writeI32($viter15);
+            $xfer += $output->writeString($kiter23);
+            $xfer += $output->writeI32($viter24);
           }
         }
         $output->writeMapEnd();

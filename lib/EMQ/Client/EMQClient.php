@@ -154,6 +154,52 @@ class EMQClient {
     self::checkParameterRange("invisibilitySeconds", $entry->invisibilitySeconds,
         Constant::get('GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_MINIMAL'),
         Constant::get('GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_MAXIMAL'));
+    self::checkMessageAttributes($entry->messageAttributes);
+  }
+
+  public static function checkMessageAttributes($attributeList)
+  {
+    if (!is_null($attributeList)) {
+      $nameList = array();
+      foreach ($attributeList as $attribute) {
+        if (stripos($attribute->type, 'string') === 0) {
+          if (is_null($attribute->stringValue)) {
+            throw new GalaxyEmqServiceException(array(
+                'errMsg' => 'Invalid user-defined attributes',
+                'details' => 'stringValue cannot be null when type is STRING'));
+          }
+        } else if (stripos($attribute->type, 'binary') === 0) {
+          if (is_null($attribute->binaryValue)) {
+            throw new GalaxyEmqServiceException(array(
+                'errMsg' => 'Invalid user-defined attributes',
+                'details' => 'binaryValue cannot be null when type is BINARY'));
+          }
+        } else {
+          throw new GalaxyEmqServiceException(array(
+              'errMsg' => 'Invalid user-defined attributes',
+              'details' => "Attribute type must start with \"STRING\" or \"BINARY\""));
+        }
+        foreach (str_split($attribute->type) as $c) {
+          if (!ctype_alnum($c) && $c !== '.') {
+            throw new GalaxyEmqServiceException(array(
+                'errMsg' => 'Invalid user-defined attributes',
+                'details' => "Invalid character '" . $c . "' in attribute type"));
+          }
+        }
+        if (is_null($attribute->name) || empty($attribute->name)) {
+          throw new GalaxyEmqServiceException(array(
+              'errMsg' => 'Invalid user-defined attributes',
+              'details' => 'Empty attribute name'));
+        }
+
+        if (in_array($attribute->name, $nameList, true)) {
+          throw new GalaxyEmqServiceException(array(
+              'errMsg' => 'Invalid user-defined attributes',
+              'details' => "Duplicate attribute name" . $attribute->name));
+        }
+        $nameList[] = $attribute->name;
+      }
+    }
   }
 
   /**
