@@ -142,7 +142,7 @@ class ClientFactory
     if ($this->isMetricEnabled_ && $this->metricsCollector_ == null) {
       $adminClientClass = 'SDS\Admin\AdminServiceClient';
       $getAdminClient = new $adminClientClass($thriftProtocol, $thriftProtocol);
-      $metricAdminClient = new RetryableClient($getAdminClient, $this->httpClient_, 1, null);
+      $metricAdminClient = new RetryableClient($getAdminClient, $this->httpClient_, null);
       $this->metricsCollector_ = new MetricsCollector($metricAdminClient);
       $httpClient->setMetricsCollector($this->metricsCollector_);
       $this->metricsCollector_->start();
@@ -171,8 +171,7 @@ class RetryableClient
   private $httpClient_;
   private $metricsCollector_;
 
-  public function __construct($client, $httpClient, $maxRetry = 1,
-                              $metricsCollector)
+  public function __construct($client, $httpClient, $metricsCollector, $maxRetry = 1)
   {
     $this->client_ = $client;
     $this->httpClient_ = $httpClient;
