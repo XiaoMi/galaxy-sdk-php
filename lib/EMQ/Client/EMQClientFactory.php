@@ -2,7 +2,6 @@
 namespace EMQ\Client;
 
 use EMQ\Common\Version;
-use RPC\Client\RetryableClient;
 use RPC\Client\RpcTHttpClient;
 use RPC\Common\ThriftProtocol;
 use Thrift\Protocol\TCompactProtocol;
@@ -17,7 +16,6 @@ class EMQClientFactory {
   private $credential_;
   private $version_;
   private $httpClient_;
-  protected $retryIfOperationTimeout_;
 
   /**
    * client端请求超时时间（ms）
@@ -50,16 +48,19 @@ class EMQClientFactory {
   const MESSAGE_SERVICE_PATH = "/v1/api/message";
 
   /**
+   * 未设置retry或者未设置retry的次数时, retry次数的默认值
+   */
+  const DEFAULT_MAX_RETRY_TIME = 3;
+
+  /**
    * @param \RPC\Auth\Credential $credential
-   * @param bool $retryIfOperationTimeout
    * Do automatic retry when curl reports CURLE_OPERATION_TIMEOUTED error,
    * note that the request may has been sent to the server successfully.
    * Don't set this when the operation is not idempotent.
    */
-  public function __construct($credential, $retryIfOperationTimeout = false) {
+  public function __construct($credential) {
     $this->credential_ = $credential;
     $this->version_ = new Version();
-    $this->retryIfOperationTimeout_ = $retryIfOperationTimeout;
   }
 
   /**
@@ -73,14 +74,18 @@ class EMQClientFactory {
    * @param string $endpoint
    * @param int $timeout
    * @param int $connTimeout
+   * @param bool $isRetry
+   * @param int $maxRetry
    * @return EMQClient
    */
   public function newQueueClient($endpoint,
       $timeout = self::DEFAULT_CLIENT_TIMEOUT,
-      $connTimeout = self::DEFAULT_CLIENT_CONN_TIMEOUT) {
+      $connTimeout = self::DEFAULT_CLIENT_CONN_TIMEOUT,
+      $isRetry = false,
+      $maxRetry = self::DEFAULT_MAX_RETRY_TIME) {
     $client = $this->getClient('EMQ\Queue\QueueServiceClient',
         $endpoint . self::QUEUE_SERVICE_PATH, $timeout, $connTimeout);
-    $retryClient = new RetryableClient($client, $this->httpClient_);
+    $retryClient = new RetryableClient($client, $this->httpClient_, $isRetry, $maxRetry);
     return new EMQClient($retryClient);
   }
 
@@ -96,14 +101,18 @@ class EMQClientFactory {
    * @param string $endpoint
    * @param int $timeout
    * @param int $connTimeout
+   * @param bool $isRetry
+   * @param int $maxRetry
    * @return EMQClient
    */
   public function newMessageClient($endpoint,
       $timeout = self::DEFAULT_CLIENT_TIMEOUT,
-      $connTimeout = self::DEFAULT_CLIENT_CONN_TIMEOUT) {
+      $connTimeout = self::DEFAULT_CLIENT_CONN_TIMEOUT,
+      $isRetry = false,
+      $maxRetry = self::DEFAULT_MAX_RETRY_TIME) {
     $client = $this->getClient('EMQ\Message\MessageServiceClient',
         $endpoint . self::MESSAGE_SERVICE_PATH, $timeout, $connTimeout);
-    $retryClient = new RetryableClient($client, $this->httpClient_);
+    $retryClient = new RetryableClient($client, $this->httpClient_, $isRetry, $maxRetry);
     return new EMQClient($retryClient);
   }
 
@@ -125,7 +134,7 @@ class EMQClientFactory {
     }
 
     $httpClient = new RpcTHttpClient($this->credential_, $url, $timeout, $connTimeout,
-        ThriftProtocol::TCOMPACT, $this->retryIfOperationTimeout_, false);
+        ThriftProtocol::TCOMPACT);
     $this->httpClient_ = $httpClient;
     $httpClient->addHeaders(array('User-Agent' => $this->userAgent()));
 

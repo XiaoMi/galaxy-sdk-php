@@ -18,6 +18,139 @@ use Thrift\Exception\TApplicationException;
 
 
 /**
+ * List of ErrorCode.
+ */
+final class ErrorCode {
+  /**
+   * Invalid action.
+   */
+  const INVALID_ACTION = 1;
+  /**
+   * Invalid attributes.
+   */
+  const INVALID_ATTRIBUTE = 2;
+  /**
+   * Queue has been deleted recently.
+   */
+  const QUEUE_DELETED_RECENTLY = 3;
+  /**
+   * Queue already exists.
+   */
+  const QUEUE_EXIST = 4;
+  /**
+   * Queue name is missing.
+   */
+  const QUEUE_NAME_MISSING = 5;
+  /**
+   * Queue does not exist.
+   */
+  const QUEUE_NOT_EXIST = 6;
+  /**
+   * Queue is used by others.
+   */
+  const QUEUE_INUSE = 7;
+  /**
+   * Queue uri is conflict.
+   */
+  const QUEUE_URI_CONFLICT = 8;
+  /**
+   * Invalid receipt handle.
+   */
+  const INVALID_RECEIPT_HANDLE = 9;
+  /**
+   * Message body is missing.
+   */
+  const MESSAGE_BODY_MISSING = 10;
+  /**
+   * Receipt handle not exit.
+   */
+  const RECEIPT_HANDLE_NOT_EXIST = 11;
+  /**
+   * Index not unique.
+   */
+  const INDEX_NOT_UNIQUE = 12;
+  /**
+   * Permission denied.
+   */
+  const PERMISSION_DENIED = 13;
+  /**
+   * Bad request.
+   */
+  const BAD_REQUEST = 34;
+  /**
+   * System internal error.
+   */
+  const INTERNAL_ERROR = 14;
+  /**
+   * Partition does not exist.
+   */
+  const PARTITION_NOT_EXIST = 15;
+  /**
+   * Partition is not running.
+   */
+  const PARTITION_NOT_RUNNING = 16;
+  /**
+   * Queue does not exit in cache.
+   */
+  const QUEUE_NOT_CACHED = 17;
+  /**
+   * Partition is not serving.
+   */
+  const PARTITION_NOT_SERVING = 18;
+  /**
+   * TTransport error, connect server error.
+   */
+  const TTRANSPORT_ERROR = 19;
+  /**
+   * Unknown exception.
+   */
+  const UNKNOWN = 30;
+  static public $__names = array(
+    1 => 'INVALID_ACTION',
+    2 => 'INVALID_ATTRIBUTE',
+    3 => 'QUEUE_DELETED_RECENTLY',
+    4 => 'QUEUE_EXIST',
+    5 => 'QUEUE_NAME_MISSING',
+    6 => 'QUEUE_NOT_EXIST',
+    7 => 'QUEUE_INUSE',
+    8 => 'QUEUE_URI_CONFLICT',
+    9 => 'INVALID_RECEIPT_HANDLE',
+    10 => 'MESSAGE_BODY_MISSING',
+    11 => 'RECEIPT_HANDLE_NOT_EXIST',
+    12 => 'INDEX_NOT_UNIQUE',
+    13 => 'PERMISSION_DENIED',
+    34 => 'BAD_REQUEST',
+    14 => 'INTERNAL_ERROR',
+    15 => 'PARTITION_NOT_EXIST',
+    16 => 'PARTITION_NOT_RUNNING',
+    17 => 'QUEUE_NOT_CACHED',
+    18 => 'PARTITION_NOT_SERVING',
+    19 => 'TTRANSPORT_ERROR',
+    30 => 'UNKNOWN',
+  );
+}
+
+final class RetryType {
+  /**
+   * Safe retry.
+   */
+  const SAFE = 0;
+  /**
+   * Unsafe retry.
+   */
+  const UNSAFE = 1;
+  /**
+   * Unsure retry, needs further determines.
+   */
+  const UNSURE = 2;
+  static public $__names = array(
+    0 => 'SAFE',
+    1 => 'UNSAFE',
+    2 => 'UNSURE',
+  );
+}
+
+/**
  * Copyright 2015, Xiaomi.
  * All rights reserved.
  * Author: shenyuannan@xiaomi.com
@@ -346,6 +479,50 @@ class Version {
     return $xfer;
   }
 
+}
+
+final class Constant extends \Thrift\Type\TConstant {
+  static protected $ERROR_BACKOFF;
+  static protected $ERROR_RETRY_TYPE;
+  static protected $MAX_RETRY;
+
+  static protected function init_ERROR_BACKOFF() {
+    return     /**
+     * SDK auto retry ErrorCode and backOff reference time,
+     * Wait time = 2 ^ retry time * backOff reference time
+     */
+array(
+            15 => 1000,
+            18 => 1000,
+            16 => 1000,
+            17 => 1000,
+            7 => 1000,
+            14 => 1000,
+            19 => 1000,
+    );
+  }
+
+  static protected function init_ERROR_RETRY_TYPE() {
+    return     /**
+     * Retry types for defined ErrorCode.
+     */
+array(
+            15 =>       0,
+            18 =>       0,
+            16 =>       0,
+            17 =>       0,
+            7 =>       0,
+            14 =>       1,
+            19 =>       2,
+);
+  }
+
+  static protected function init_MAX_RETRY() {
+    return     /**
+     * The max retry time before throwing exception.
+     */
+3;
+  }
 }
 
 
