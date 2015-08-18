@@ -26,13 +26,6 @@ class MessageAttribute {
   static $_TSPEC;
 
   /**
-   * name of the attribute
-   * must be unique in one message
-   * 
-   * @var string
-   */
-  public $name = null;
-  /**
    * must start with "STRING" or "BINARY", with an optional "." and a user-defined sub-type
    * like "STRING.INTEGER" or "BINARY.JPEG"
    * do not contain characters excepts alphabets, digits or "."
@@ -60,27 +53,20 @@ class MessageAttribute {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'name',
-          'type' => TType::STRING,
-          ),
-        2 => array(
           'var' => 'type',
           'type' => TType::STRING,
           ),
-        3 => array(
+        2 => array(
           'var' => 'stringValue',
           'type' => TType::STRING,
           ),
-        4 => array(
+        3 => array(
           'var' => 'binaryValue',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['name'])) {
-        $this->name = $vals['name'];
-      }
       if (isset($vals['type'])) {
         $this->type = $vals['type'];
       }
@@ -114,26 +100,19 @@ class MessageAttribute {
       {
         case 1:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->name);
+            $xfer += $input->readString($this->type);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->type);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->stringValue);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
-        case 4:
+        case 3:
           if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->binaryValue);
           } else {
@@ -153,23 +132,18 @@ class MessageAttribute {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('MessageAttribute');
-    if ($this->name !== null) {
-      $xfer += $output->writeFieldBegin('name', TType::STRING, 1);
-      $xfer += $output->writeString($this->name);
-      $xfer += $output->writeFieldEnd();
-    }
     if ($this->type !== null) {
-      $xfer += $output->writeFieldBegin('type', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('type', TType::STRING, 1);
       $xfer += $output->writeString($this->type);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->stringValue !== null) {
-      $xfer += $output->writeFieldBegin('stringValue', TType::STRING, 3);
+      $xfer += $output->writeFieldBegin('stringValue', TType::STRING, 2);
       $xfer += $output->writeString($this->stringValue);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->binaryValue !== null) {
-      $xfer += $output->writeFieldBegin('binaryValue', TType::STRING, 4);
+      $xfer += $output->writeFieldBegin('binaryValue', TType::STRING, 3);
       $xfer += $output->writeString($this->binaryValue);
       $xfer += $output->writeFieldEnd();
     }
@@ -217,7 +191,7 @@ class SendMessageRequest {
    * User-defined attributes attached to message
    * 
    * 
-   * @var \EMQ\Message\MessageAttribute[]
+   * @var array
    */
   public $messageAttributes = null;
 
@@ -242,9 +216,13 @@ class SendMessageRequest {
           ),
         5 => array(
           'var' => 'messageAttributes',
-          'type' => TType::LST,
-          'etype' => TType::STRUCT,
-          'elem' => array(
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
             'type' => TType::STRUCT,
             'class' => '\EMQ\Message\MessageAttribute',
             ),
@@ -318,19 +296,22 @@ class SendMessageRequest {
           }
           break;
         case 5:
-          if ($ftype == TType::LST) {
+          if ($ftype == TType::MAP) {
             $this->messageAttributes = array();
             $_size0 = 0;
-            $_etype3 = 0;
-            $xfer += $input->readListBegin($_etype3, $_size0);
+            $_ktype1 = 0;
+            $_vtype2 = 0;
+            $xfer += $input->readMapBegin($_ktype1, $_vtype2, $_size0);
             for ($_i4 = 0; $_i4 < $_size0; ++$_i4)
             {
-              $elem5 = null;
-              $elem5 = new \EMQ\Message\MessageAttribute();
-              $xfer += $elem5->read($input);
-              $this->messageAttributes []= $elem5;
+              $key5 = '';
+              $val6 = new \EMQ\Message\MessageAttribute();
+              $xfer += $input->readString($key5);
+              $val6 = new \EMQ\Message\MessageAttribute();
+              $xfer += $val6->read($input);
+              $this->messageAttributes[$key5] = $val6;
             }
-            $xfer += $input->readListEnd();
+            $xfer += $input->readMapEnd();
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -372,16 +353,17 @@ class SendMessageRequest {
       if (!is_array($this->messageAttributes)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
       }
-      $xfer += $output->writeFieldBegin('messageAttributes', TType::LST, 5);
+      $xfer += $output->writeFieldBegin('messageAttributes', TType::MAP, 5);
       {
-        $output->writeListBegin(TType::STRUCT, count($this->messageAttributes));
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->messageAttributes));
         {
-          foreach ($this->messageAttributes as $iter6)
+          foreach ($this->messageAttributes as $kiter7 => $viter8)
           {
-            $xfer += $iter6->write($output);
+            $xfer += $output->writeString($kiter7);
+            $xfer += $viter8->write($output);
           }
         }
-        $output->writeListEnd();
+        $output->writeMapEnd();
       }
       $xfer += $output->writeFieldEnd();
     }
@@ -396,13 +378,33 @@ class SendMessageResponse {
   static $_TSPEC;
 
   /**
-   * MessageID for the send message, it should in format
-   * "partititonID:createTimestamp:sequenceID";
+   * MessageID for the send message
    * 
    * 
    * @var string
    */
   public $messageID = null;
+  /**
+   * Length of messge body
+   * 
+   * 
+   * @var int
+   */
+  public $bodyLength = null;
+  /**
+   * MD5 string of the message body
+   * 
+   * 
+   * @var string
+   */
+  public $bodyMd5 = null;
+  /**
+   * timestamp when the message arrived servers
+   * 
+   * 
+   * @var int
+   */
+  public $sendTimestamp = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -411,11 +413,32 @@ class SendMessageResponse {
           'var' => 'messageID',
           'type' => TType::STRING,
           ),
+        2 => array(
+          'var' => 'bodyLength',
+          'type' => TType::I32,
+          ),
+        3 => array(
+          'var' => 'bodyMd5',
+          'type' => TType::STRING,
+          ),
+        4 => array(
+          'var' => 'sendTimestamp',
+          'type' => TType::I64,
+          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['messageID'])) {
         $this->messageID = $vals['messageID'];
+      }
+      if (isset($vals['bodyLength'])) {
+        $this->bodyLength = $vals['bodyLength'];
+      }
+      if (isset($vals['bodyMd5'])) {
+        $this->bodyMd5 = $vals['bodyMd5'];
+      }
+      if (isset($vals['sendTimestamp'])) {
+        $this->sendTimestamp = $vals['sendTimestamp'];
       }
     }
   }
@@ -446,6 +469,27 @@ class SendMessageResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->bodyLength);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->bodyMd5);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->sendTimestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -462,6 +506,21 @@ class SendMessageResponse {
     if ($this->messageID !== null) {
       $xfer += $output->writeFieldBegin('messageID', TType::STRING, 1);
       $xfer += $output->writeString($this->messageID);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->bodyLength !== null) {
+      $xfer += $output->writeFieldBegin('bodyLength', TType::I32, 2);
+      $xfer += $output->writeI32($this->bodyLength);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->bodyMd5 !== null) {
+      $xfer += $output->writeFieldBegin('bodyMd5', TType::STRING, 3);
+      $xfer += $output->writeString($this->bodyMd5);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->sendTimestamp !== null) {
+      $xfer += $output->writeFieldBegin('sendTimestamp', TType::I64, 4);
+      $xfer += $output->writeI64($this->sendTimestamp);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -510,7 +569,7 @@ class SendMessageBatchRequestEntry {
    * User-defined attributes attached to message
    * 
    * 
-   * @var \EMQ\Message\MessageAttribute[]
+   * @var array
    */
   public $messageAttributes = null;
 
@@ -535,9 +594,13 @@ class SendMessageBatchRequestEntry {
           ),
         5 => array(
           'var' => 'messageAttributes',
-          'type' => TType::LST,
-          'etype' => TType::STRUCT,
-          'elem' => array(
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
             'type' => TType::STRUCT,
             'class' => '\EMQ\Message\MessageAttribute',
             ),
@@ -611,19 +674,22 @@ class SendMessageBatchRequestEntry {
           }
           break;
         case 5:
-          if ($ftype == TType::LST) {
+          if ($ftype == TType::MAP) {
             $this->messageAttributes = array();
-            $_size7 = 0;
-            $_etype10 = 0;
-            $xfer += $input->readListBegin($_etype10, $_size7);
-            for ($_i11 = 0; $_i11 < $_size7; ++$_i11)
+            $_size9 = 0;
+            $_ktype10 = 0;
+            $_vtype11 = 0;
+            $xfer += $input->readMapBegin($_ktype10, $_vtype11, $_size9);
+            for ($_i13 = 0; $_i13 < $_size9; ++$_i13)
             {
-              $elem12 = null;
-              $elem12 = new \EMQ\Message\MessageAttribute();
-              $xfer += $elem12->read($input);
-              $this->messageAttributes []= $elem12;
+              $key14 = '';
+              $val15 = new \EMQ\Message\MessageAttribute();
+              $xfer += $input->readString($key14);
+              $val15 = new \EMQ\Message\MessageAttribute();
+              $xfer += $val15->read($input);
+              $this->messageAttributes[$key14] = $val15;
             }
-            $xfer += $input->readListEnd();
+            $xfer += $input->readMapEnd();
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -665,16 +731,17 @@ class SendMessageBatchRequestEntry {
       if (!is_array($this->messageAttributes)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
       }
-      $xfer += $output->writeFieldBegin('messageAttributes', TType::LST, 5);
+      $xfer += $output->writeFieldBegin('messageAttributes', TType::MAP, 5);
       {
-        $output->writeListBegin(TType::STRUCT, count($this->messageAttributes));
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->messageAttributes));
         {
-          foreach ($this->messageAttributes as $iter13)
+          foreach ($this->messageAttributes as $kiter16 => $viter17)
           {
-            $xfer += $iter13->write($output);
+            $xfer += $output->writeString($kiter16);
+            $xfer += $viter17->write($output);
           }
         }
-        $output->writeListEnd();
+        $output->writeMapEnd();
       }
       $xfer += $output->writeFieldEnd();
     }
@@ -760,15 +827,15 @@ class SendMessageBatchRequest {
         case 2:
           if ($ftype == TType::LST) {
             $this->sendMessageBatchRequestEntryList = array();
-            $_size14 = 0;
-            $_etype17 = 0;
-            $xfer += $input->readListBegin($_etype17, $_size14);
-            for ($_i18 = 0; $_i18 < $_size14; ++$_i18)
+            $_size18 = 0;
+            $_etype21 = 0;
+            $xfer += $input->readListBegin($_etype21, $_size18);
+            for ($_i22 = 0; $_i22 < $_size18; ++$_i22)
             {
-              $elem19 = null;
-              $elem19 = new \EMQ\Message\SendMessageBatchRequestEntry();
-              $xfer += $elem19->read($input);
-              $this->sendMessageBatchRequestEntryList []= $elem19;
+              $elem23 = null;
+              $elem23 = new \EMQ\Message\SendMessageBatchRequestEntry();
+              $xfer += $elem23->read($input);
+              $this->sendMessageBatchRequestEntryList []= $elem23;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -801,9 +868,9 @@ class SendMessageBatchRequest {
       {
         $output->writeListBegin(TType::STRUCT, count($this->sendMessageBatchRequestEntryList));
         {
-          foreach ($this->sendMessageBatchRequestEntryList as $iter20)
+          foreach ($this->sendMessageBatchRequestEntryList as $iter24)
           {
-            $xfer += $iter20->write($output);
+            $xfer += $iter24->write($output);
           }
         }
         $output->writeListEnd();
@@ -828,13 +895,33 @@ class SendMessageBatchResponseEntry {
    */
   public $entryId = null;
   /**
-   * MessageID for the send message, it should in format
-   * "partititonID:createTimestamp:sequenceID";
+   * MessageID for the send message
    * 
    * 
    * @var string
    */
   public $messageID = null;
+  /**
+   * Length of messge body
+   * 
+   * 
+   * @var int
+   */
+  public $bodyLength = null;
+  /**
+   * MD5 string of the message body
+   * 
+   * 
+   * @var string
+   */
+  public $bodyMd5 = null;
+  /**
+   * timestamp when the message arrived servers
+   * 
+   * 
+   * @var int
+   */
+  public $sendTimestamp = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -847,6 +934,18 @@ class SendMessageBatchResponseEntry {
           'var' => 'messageID',
           'type' => TType::STRING,
           ),
+        3 => array(
+          'var' => 'bodyLength',
+          'type' => TType::I32,
+          ),
+        4 => array(
+          'var' => 'bodyMd5',
+          'type' => TType::STRING,
+          ),
+        5 => array(
+          'var' => 'sendTimestamp',
+          'type' => TType::I64,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -855,6 +954,15 @@ class SendMessageBatchResponseEntry {
       }
       if (isset($vals['messageID'])) {
         $this->messageID = $vals['messageID'];
+      }
+      if (isset($vals['bodyLength'])) {
+        $this->bodyLength = $vals['bodyLength'];
+      }
+      if (isset($vals['bodyMd5'])) {
+        $this->bodyMd5 = $vals['bodyMd5'];
+      }
+      if (isset($vals['sendTimestamp'])) {
+        $this->sendTimestamp = $vals['sendTimestamp'];
       }
     }
   }
@@ -892,6 +1000,27 @@ class SendMessageBatchResponseEntry {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 3:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->bodyLength);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->bodyMd5);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->sendTimestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -913,6 +1042,21 @@ class SendMessageBatchResponseEntry {
     if ($this->messageID !== null) {
       $xfer += $output->writeFieldBegin('messageID', TType::STRING, 2);
       $xfer += $output->writeString($this->messageID);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->bodyLength !== null) {
+      $xfer += $output->writeFieldBegin('bodyLength', TType::I32, 3);
+      $xfer += $output->writeI32($this->bodyLength);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->bodyMd5 !== null) {
+      $xfer += $output->writeFieldBegin('bodyMd5', TType::STRING, 4);
+      $xfer += $output->writeString($this->bodyMd5);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->sendTimestamp !== null) {
+      $xfer += $output->writeFieldBegin('sendTimestamp', TType::I64, 5);
+      $xfer += $output->writeI64($this->sendTimestamp);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1101,15 +1245,15 @@ class SendMessageBatchResponse {
         case 1:
           if ($ftype == TType::LST) {
             $this->successful = array();
-            $_size21 = 0;
-            $_etype24 = 0;
-            $xfer += $input->readListBegin($_etype24, $_size21);
-            for ($_i25 = 0; $_i25 < $_size21; ++$_i25)
+            $_size25 = 0;
+            $_etype28 = 0;
+            $xfer += $input->readListBegin($_etype28, $_size25);
+            for ($_i29 = 0; $_i29 < $_size25; ++$_i29)
             {
-              $elem26 = null;
-              $elem26 = new \EMQ\Message\SendMessageBatchResponseEntry();
-              $xfer += $elem26->read($input);
-              $this->successful []= $elem26;
+              $elem30 = null;
+              $elem30 = new \EMQ\Message\SendMessageBatchResponseEntry();
+              $xfer += $elem30->read($input);
+              $this->successful []= $elem30;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1119,15 +1263,15 @@ class SendMessageBatchResponse {
         case 2:
           if ($ftype == TType::LST) {
             $this->failed = array();
-            $_size27 = 0;
-            $_etype30 = 0;
-            $xfer += $input->readListBegin($_etype30, $_size27);
-            for ($_i31 = 0; $_i31 < $_size27; ++$_i31)
+            $_size31 = 0;
+            $_etype34 = 0;
+            $xfer += $input->readListBegin($_etype34, $_size31);
+            for ($_i35 = 0; $_i35 < $_size31; ++$_i35)
             {
-              $elem32 = null;
-              $elem32 = new \EMQ\Message\MessageBatchErrorEntry();
-              $xfer += $elem32->read($input);
-              $this->failed []= $elem32;
+              $elem36 = null;
+              $elem36 = new \EMQ\Message\MessageBatchErrorEntry();
+              $xfer += $elem36->read($input);
+              $this->failed []= $elem36;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1155,9 +1299,9 @@ class SendMessageBatchResponse {
       {
         $output->writeListBegin(TType::STRUCT, count($this->successful));
         {
-          foreach ($this->successful as $iter33)
+          foreach ($this->successful as $iter37)
           {
-            $xfer += $iter33->write($output);
+            $xfer += $iter37->write($output);
           }
         }
         $output->writeListEnd();
@@ -1172,9 +1316,9 @@ class SendMessageBatchResponse {
       {
         $output->writeListBegin(TType::STRUCT, count($this->failed));
         {
-          foreach ($this->failed as $iter34)
+          foreach ($this->failed as $iter38)
           {
-            $xfer += $iter34->write($output);
+            $xfer += $iter38->write($output);
           }
         }
         $output->writeListEnd();
@@ -1344,10 +1488,24 @@ class ReceiveMessageResponse {
    */
   public $messageBody = null;
   /**
+   * Attributes of message, including:
+   * - senderId
+   * - messageLength
+   * - md5OfBody
+   * - sendTimestamp
+   * - receiveTimestamp
+   * - firstReceiveTimestamp
+   * - receiveCount
+   * 
+   * 
+   * @var array
+   */
+  public $attributes = null;
+  /**
    * User-defined attributes attached to message
    * 
    * 
-   * @var \EMQ\Message\MessageAttribute[]
+   * @var array
    */
   public $messageAttributes = null;
 
@@ -1367,10 +1525,26 @@ class ReceiveMessageResponse {
           'type' => TType::STRING,
           ),
         4 => array(
+          'var' => 'attributes',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRING,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRING,
+            ),
+          ),
+        5 => array(
           'var' => 'messageAttributes',
-          'type' => TType::LST,
-          'etype' => TType::STRUCT,
-          'elem' => array(
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
             'type' => TType::STRUCT,
             'class' => '\EMQ\Message\MessageAttribute',
             ),
@@ -1386,6 +1560,9 @@ class ReceiveMessageResponse {
       }
       if (isset($vals['messageBody'])) {
         $this->messageBody = $vals['messageBody'];
+      }
+      if (isset($vals['attributes'])) {
+        $this->attributes = $vals['attributes'];
       }
       if (isset($vals['messageAttributes'])) {
         $this->messageAttributes = $vals['messageAttributes'];
@@ -1434,19 +1611,42 @@ class ReceiveMessageResponse {
           }
           break;
         case 4:
-          if ($ftype == TType::LST) {
-            $this->messageAttributes = array();
-            $_size35 = 0;
-            $_etype38 = 0;
-            $xfer += $input->readListBegin($_etype38, $_size35);
-            for ($_i39 = 0; $_i39 < $_size35; ++$_i39)
+          if ($ftype == TType::MAP) {
+            $this->attributes = array();
+            $_size39 = 0;
+            $_ktype40 = 0;
+            $_vtype41 = 0;
+            $xfer += $input->readMapBegin($_ktype40, $_vtype41, $_size39);
+            for ($_i43 = 0; $_i43 < $_size39; ++$_i43)
             {
-              $elem40 = null;
-              $elem40 = new \EMQ\Message\MessageAttribute();
-              $xfer += $elem40->read($input);
-              $this->messageAttributes []= $elem40;
+              $key44 = '';
+              $val45 = '';
+              $xfer += $input->readString($key44);
+              $xfer += $input->readString($val45);
+              $this->attributes[$key44] = $val45;
             }
-            $xfer += $input->readListEnd();
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::MAP) {
+            $this->messageAttributes = array();
+            $_size46 = 0;
+            $_ktype47 = 0;
+            $_vtype48 = 0;
+            $xfer += $input->readMapBegin($_ktype47, $_vtype48, $_size46);
+            for ($_i50 = 0; $_i50 < $_size46; ++$_i50)
+            {
+              $key51 = '';
+              $val52 = new \EMQ\Message\MessageAttribute();
+              $xfer += $input->readString($key51);
+              $val52 = new \EMQ\Message\MessageAttribute();
+              $xfer += $val52->read($input);
+              $this->messageAttributes[$key51] = $val52;
+            }
+            $xfer += $input->readMapEnd();
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -1479,20 +1679,39 @@ class ReceiveMessageResponse {
       $xfer += $output->writeString($this->messageBody);
       $xfer += $output->writeFieldEnd();
     }
+    if ($this->attributes !== null) {
+      if (!is_array($this->attributes)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('attributes', TType::MAP, 4);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRING, count($this->attributes));
+        {
+          foreach ($this->attributes as $kiter53 => $viter54)
+          {
+            $xfer += $output->writeString($kiter53);
+            $xfer += $output->writeString($viter54);
+          }
+        }
+        $output->writeMapEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->messageAttributes !== null) {
       if (!is_array($this->messageAttributes)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
       }
-      $xfer += $output->writeFieldBegin('messageAttributes', TType::LST, 4);
+      $xfer += $output->writeFieldBegin('messageAttributes', TType::MAP, 5);
       {
-        $output->writeListBegin(TType::STRUCT, count($this->messageAttributes));
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->messageAttributes));
         {
-          foreach ($this->messageAttributes as $iter41)
+          foreach ($this->messageAttributes as $kiter55 => $viter56)
           {
-            $xfer += $iter41->write($output);
+            $xfer += $output->writeString($kiter55);
+            $xfer += $viter56->write($output);
           }
         }
-        $output->writeListEnd();
+        $output->writeMapEnd();
       }
       $xfer += $output->writeFieldEnd();
     }
@@ -1816,15 +2035,15 @@ class ChangeMessageVisibilityBatchRequest {
         case 2:
           if ($ftype == TType::LST) {
             $this->changeMessageVisibilityRequestEntryList = array();
-            $_size42 = 0;
-            $_etype45 = 0;
-            $xfer += $input->readListBegin($_etype45, $_size42);
-            for ($_i46 = 0; $_i46 < $_size42; ++$_i46)
+            $_size57 = 0;
+            $_etype60 = 0;
+            $xfer += $input->readListBegin($_etype60, $_size57);
+            for ($_i61 = 0; $_i61 < $_size57; ++$_i61)
             {
-              $elem47 = null;
-              $elem47 = new \EMQ\Message\ChangeMessageVisibilityBatchRequestEntry();
-              $xfer += $elem47->read($input);
-              $this->changeMessageVisibilityRequestEntryList []= $elem47;
+              $elem62 = null;
+              $elem62 = new \EMQ\Message\ChangeMessageVisibilityBatchRequestEntry();
+              $xfer += $elem62->read($input);
+              $this->changeMessageVisibilityRequestEntryList []= $elem62;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1857,9 +2076,9 @@ class ChangeMessageVisibilityBatchRequest {
       {
         $output->writeListBegin(TType::STRUCT, count($this->changeMessageVisibilityRequestEntryList));
         {
-          foreach ($this->changeMessageVisibilityRequestEntryList as $iter48)
+          foreach ($this->changeMessageVisibilityRequestEntryList as $iter63)
           {
-            $xfer += $iter48->write($output);
+            $xfer += $iter63->write($output);
           }
         }
         $output->writeListEnd();
@@ -1946,14 +2165,14 @@ class ChangeMessageVisibilityBatchResponse {
         case 1:
           if ($ftype == TType::LST) {
             $this->successful = array();
-            $_size49 = 0;
-            $_etype52 = 0;
-            $xfer += $input->readListBegin($_etype52, $_size49);
-            for ($_i53 = 0; $_i53 < $_size49; ++$_i53)
+            $_size64 = 0;
+            $_etype67 = 0;
+            $xfer += $input->readListBegin($_etype67, $_size64);
+            for ($_i68 = 0; $_i68 < $_size64; ++$_i68)
             {
-              $elem54 = null;
-              $xfer += $input->readString($elem54);
-              $this->successful []= $elem54;
+              $elem69 = null;
+              $xfer += $input->readString($elem69);
+              $this->successful []= $elem69;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1963,15 +2182,15 @@ class ChangeMessageVisibilityBatchResponse {
         case 2:
           if ($ftype == TType::LST) {
             $this->failed = array();
-            $_size55 = 0;
-            $_etype58 = 0;
-            $xfer += $input->readListBegin($_etype58, $_size55);
-            for ($_i59 = 0; $_i59 < $_size55; ++$_i59)
+            $_size70 = 0;
+            $_etype73 = 0;
+            $xfer += $input->readListBegin($_etype73, $_size70);
+            for ($_i74 = 0; $_i74 < $_size70; ++$_i74)
             {
-              $elem60 = null;
-              $elem60 = new \EMQ\Message\MessageBatchErrorEntry();
-              $xfer += $elem60->read($input);
-              $this->failed []= $elem60;
+              $elem75 = null;
+              $elem75 = new \EMQ\Message\MessageBatchErrorEntry();
+              $xfer += $elem75->read($input);
+              $this->failed []= $elem75;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1999,9 +2218,9 @@ class ChangeMessageVisibilityBatchResponse {
       {
         $output->writeListBegin(TType::STRING, count($this->successful));
         {
-          foreach ($this->successful as $iter61)
+          foreach ($this->successful as $iter76)
           {
-            $xfer += $output->writeString($iter61);
+            $xfer += $output->writeString($iter76);
           }
         }
         $output->writeListEnd();
@@ -2016,9 +2235,9 @@ class ChangeMessageVisibilityBatchResponse {
       {
         $output->writeListBegin(TType::STRUCT, count($this->failed));
         {
-          foreach ($this->failed as $iter62)
+          foreach ($this->failed as $iter77)
           {
-            $xfer += $iter62->write($output);
+            $xfer += $iter77->write($output);
           }
         }
         $output->writeListEnd();
@@ -2289,15 +2508,15 @@ class DeleteMessageBatchRequest {
         case 2:
           if ($ftype == TType::LST) {
             $this->deleteMessageBatchRequestEntryList = array();
-            $_size63 = 0;
-            $_etype66 = 0;
-            $xfer += $input->readListBegin($_etype66, $_size63);
-            for ($_i67 = 0; $_i67 < $_size63; ++$_i67)
+            $_size78 = 0;
+            $_etype81 = 0;
+            $xfer += $input->readListBegin($_etype81, $_size78);
+            for ($_i82 = 0; $_i82 < $_size78; ++$_i82)
             {
-              $elem68 = null;
-              $elem68 = new \EMQ\Message\DeleteMessageBatchRequestEntry();
-              $xfer += $elem68->read($input);
-              $this->deleteMessageBatchRequestEntryList []= $elem68;
+              $elem83 = null;
+              $elem83 = new \EMQ\Message\DeleteMessageBatchRequestEntry();
+              $xfer += $elem83->read($input);
+              $this->deleteMessageBatchRequestEntryList []= $elem83;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2330,9 +2549,9 @@ class DeleteMessageBatchRequest {
       {
         $output->writeListBegin(TType::STRUCT, count($this->deleteMessageBatchRequestEntryList));
         {
-          foreach ($this->deleteMessageBatchRequestEntryList as $iter69)
+          foreach ($this->deleteMessageBatchRequestEntryList as $iter84)
           {
-            $xfer += $iter69->write($output);
+            $xfer += $iter84->write($output);
           }
         }
         $output->writeListEnd();
@@ -2419,14 +2638,14 @@ class DeleteMessageBatchResponse {
         case 1:
           if ($ftype == TType::LST) {
             $this->successful = array();
-            $_size70 = 0;
-            $_etype73 = 0;
-            $xfer += $input->readListBegin($_etype73, $_size70);
-            for ($_i74 = 0; $_i74 < $_size70; ++$_i74)
+            $_size85 = 0;
+            $_etype88 = 0;
+            $xfer += $input->readListBegin($_etype88, $_size85);
+            for ($_i89 = 0; $_i89 < $_size85; ++$_i89)
             {
-              $elem75 = null;
-              $xfer += $input->readString($elem75);
-              $this->successful []= $elem75;
+              $elem90 = null;
+              $xfer += $input->readString($elem90);
+              $this->successful []= $elem90;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2436,15 +2655,15 @@ class DeleteMessageBatchResponse {
         case 2:
           if ($ftype == TType::LST) {
             $this->failed = array();
-            $_size76 = 0;
-            $_etype79 = 0;
-            $xfer += $input->readListBegin($_etype79, $_size76);
-            for ($_i80 = 0; $_i80 < $_size76; ++$_i80)
+            $_size91 = 0;
+            $_etype94 = 0;
+            $xfer += $input->readListBegin($_etype94, $_size91);
+            for ($_i95 = 0; $_i95 < $_size91; ++$_i95)
             {
-              $elem81 = null;
-              $elem81 = new \EMQ\Message\MessageBatchErrorEntry();
-              $xfer += $elem81->read($input);
-              $this->failed []= $elem81;
+              $elem96 = null;
+              $elem96 = new \EMQ\Message\MessageBatchErrorEntry();
+              $xfer += $elem96->read($input);
+              $this->failed []= $elem96;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2472,9 +2691,9 @@ class DeleteMessageBatchResponse {
       {
         $output->writeListBegin(TType::STRING, count($this->successful));
         {
-          foreach ($this->successful as $iter82)
+          foreach ($this->successful as $iter97)
           {
-            $xfer += $output->writeString($iter82);
+            $xfer += $output->writeString($iter97);
           }
         }
         $output->writeListEnd();
@@ -2489,9 +2708,9 @@ class DeleteMessageBatchResponse {
       {
         $output->writeListBegin(TType::STRUCT, count($this->failed));
         {
-          foreach ($this->failed as $iter83)
+          foreach ($this->failed as $iter98)
           {
-            $xfer += $iter83->write($output);
+            $xfer += $iter98->write($output);
           }
         }
         $output->writeListEnd();

@@ -974,15 +974,15 @@ class MessageService_receiveMessage_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size84 = 0;
-            $_etype87 = 0;
-            $xfer += $input->readListBegin($_etype87, $_size84);
-            for ($_i88 = 0; $_i88 < $_size84; ++$_i88)
+            $_size99 = 0;
+            $_etype102 = 0;
+            $xfer += $input->readListBegin($_etype102, $_size99);
+            for ($_i103 = 0; $_i103 < $_size99; ++$_i103)
             {
-              $elem89 = null;
-              $elem89 = new \EMQ\Message\ReceiveMessageResponse();
-              $xfer += $elem89->read($input);
-              $this->success []= $elem89;
+              $elem104 = null;
+              $elem104 = new \EMQ\Message\ReceiveMessageResponse();
+              $xfer += $elem104->read($input);
+              $this->success []= $elem104;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1018,9 +1018,9 @@ class MessageService_receiveMessage_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter90)
+          foreach ($this->success as $iter105)
           {
-            $xfer += $iter90->write($output);
+            $xfer += $iter105->write($output);
           }
         }
         $output->writeListEnd();
