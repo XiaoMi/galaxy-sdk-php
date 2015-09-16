@@ -275,8 +275,8 @@ class SdsTHttpClient extends THttpClient
       CURLOPT_POST => true,
       CURLOPT_HEADER => true,
       CURLOPT_POSTFIELDS => $this->buf_,
-      CURLOPT_TIMEOUT => $this->timeout_,
-      CURLOPT_CONNECTTIMEOUT => $this->connTimeout_,
+      CURLOPT_TIMEOUT_MS => $this->timeout_,
+      CURLOPT_CONNECTTIMEOUT_MS => $this->connTimeout_,
       CURLOPT_VERBOSE => $this->verbose_
     ));
 
