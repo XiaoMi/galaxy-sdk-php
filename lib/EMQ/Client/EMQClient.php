@@ -88,6 +88,10 @@ class EMQClient {
               $arguments[0]->maxReceiveMessageWaitSeconds,
               Constant::get('GALAXY_EMQ_QUEUE_RECEIVE_WAIT_SECONDS_MINIMAL'),
               Constant::get('GALAXY_EMQ_QUEUE_RECEIVE_WAIT_SECONDS_MAXIMAL'));
+          if (!is_null($arguments[0]->attributeName)) {
+            self::checkNotEmpty($arguments[0]->attributeName, "attributeName");
+            self::checkMessageAttribute($arguments[0]->attributeValue);
+          }
           break;
         case 'changeMessageVisibilitySecondsBatch':
           self::validateQueueName($arguments[0]->queueName);
@@ -163,6 +167,10 @@ class EMQClient {
 
   public static function checkMessageAttribute($attribute)
   {
+    if (is_null($attribute)) {
+      throw new GalaxyEmqServiceException(array(
+        'errMsg' => 'Message attribute is null'));
+    }
     if (stripos($attribute->type, 'string') === 0) {
       if (is_null($attribute->stringValue)) {
         throw new GalaxyEmqServiceException(array(

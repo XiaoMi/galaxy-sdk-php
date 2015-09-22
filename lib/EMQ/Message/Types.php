@@ -1356,6 +1356,22 @@ class ReceiveMessageRequest {
    * @var int
    */
   public $maxReceiveMessageWaitSeconds = 0;
+  /**
+   * Attribute name to match
+   * case-sensitive
+   * 
+   * 
+   * @var string
+   */
+  public $attributeName = null;
+  /**
+   * Attribute value to match, corresponding to attributeName
+   * case-sensitive
+   * 
+   * 
+   * @var \EMQ\Message\MessageAttribute
+   */
+  public $attributeValue = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -1372,6 +1388,15 @@ class ReceiveMessageRequest {
           'var' => 'maxReceiveMessageWaitSeconds',
           'type' => TType::I32,
           ),
+        4 => array(
+          'var' => 'attributeName',
+          'type' => TType::STRING,
+          ),
+        5 => array(
+          'var' => 'attributeValue',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Message\MessageAttribute',
+          ),
         );
     }
     if (is_array($vals)) {
@@ -1383,6 +1408,12 @@ class ReceiveMessageRequest {
       }
       if (isset($vals['maxReceiveMessageWaitSeconds'])) {
         $this->maxReceiveMessageWaitSeconds = $vals['maxReceiveMessageWaitSeconds'];
+      }
+      if (isset($vals['attributeName'])) {
+        $this->attributeName = $vals['attributeName'];
+      }
+      if (isset($vals['attributeValue'])) {
+        $this->attributeValue = $vals['attributeValue'];
       }
     }
   }
@@ -1427,6 +1458,21 @@ class ReceiveMessageRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 4:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->attributeName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::STRUCT) {
+            $this->attributeValue = new \EMQ\Message\MessageAttribute();
+            $xfer += $this->attributeValue->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -1453,6 +1499,19 @@ class ReceiveMessageRequest {
     if ($this->maxReceiveMessageWaitSeconds !== null) {
       $xfer += $output->writeFieldBegin('maxReceiveMessageWaitSeconds', TType::I32, 3);
       $xfer += $output->writeI32($this->maxReceiveMessageWaitSeconds);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->attributeName !== null) {
+      $xfer += $output->writeFieldBegin('attributeName', TType::STRING, 4);
+      $xfer += $output->writeString($this->attributeName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->attributeValue !== null) {
+      if (!is_object($this->attributeValue)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('attributeValue', TType::STRUCT, 5);
+      $xfer += $this->attributeValue->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1740,9 +1799,7 @@ class ChangeMessageVisibilityRequest {
    */
   public $receiptHandle = null;
   /**
-   * The extra invisibilitySeconds for this message, the invisibility seconds
-   * will be (oldIvisibulitySeconds + newInvisibilitySeconds), and can only
-   * affect on the newly received message and ont exceed old invisibilitySeconds;
+   * The extra invisibilitySeconds for this message
    * 
    * 
    * @var int
@@ -1865,9 +1922,7 @@ class ChangeMessageVisibilityBatchRequestEntry {
    */
   public $receiptHandle = null;
   /**
-   * The extra invisibilitySeconds for this message, the invisibility seconds
-   * will be (oldIvisibulitySeconds + newInvisibilitySeconds), and can only
-   * affect on the newly received message and ont exceed old invisibilitySeconds;
+   * The extra invisibilitySeconds for this message
    * 
    * 
    * @var int
