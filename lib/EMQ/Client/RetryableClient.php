@@ -9,7 +9,6 @@ use EMQ\Common\GalaxyEmqServiceException;
  * All rights reserved.
  * Author: shenyuannan@xiaomi.com
  */
-
 class RetryableClient {
   private $isRetry_;
   private $maxRetry_;
@@ -36,10 +35,11 @@ class RetryableClient {
         $retryType = $this->getRetryType($se->errorCode, $name);
         $sleepMs = $this->backoffTime($se->errorCode, $name);
         if ($retry >= $this->maxRetry_ || $sleepMs < 0 || $retryType == -1 ||
-            (!$this->isRetry_ && $retryType == 1)) {
+            (!$this->isRetry_ && $retryType == 1)
+        ) {
           throw $se;
         }
-        if($this->isRetry_ && $retryType == 1 || $retryType == 0){
+        if ($this->isRetry_ && $retryType == 1 || $retryType == 0) {
           usleep(1000 * ($sleepMs << $retry));
           $retry++;
         }
@@ -57,18 +57,18 @@ class RetryableClient {
     }
   }
 
-  private function getRetryType($errorCode, $name){
+  private function getRetryType($errorCode, $name) {
     print "to get retry type.";
     $retryTypeMap = Constant::get('ERROR_RETRY_TYPE');
     if (array_key_exists($errorCode, $retryTypeMap)) {
       echo "get retry type is:" . $retryTypeMap[$errorCode];
       $getRetryType = $retryTypeMap[$errorCode];
-      if($getRetryType == 2){
-        if($this->startsWith($name,"deleteMessage") ||
-            $this->startsWith($name,"changeMessage")){
+      if ($getRetryType == 2) {
+        if ($this->startsWith($name, "deleteMessage") ||
+            $this->startsWith($name, "changeMessage")
+        ) {
           return 0;
-        }
-        else{
+        } else {
           return 1;
         }
       }
@@ -77,8 +77,7 @@ class RetryableClient {
     return -1;
   }
 
-  private function startsWith($haystack, $needle)
-  {
+  private function startsWith($haystack, $needle) {
     $length = strlen($needle);
     return (substr($haystack, 0, $length) === $needle);
   }

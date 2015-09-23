@@ -52,7 +52,16 @@ interface QueueServiceIf extends \EMQ\Common\EMQBaseServiceIf {
    */
   public function setQueueAttribute(\EMQ\Queue\SetQueueAttributesRequest $request);
   /**
-   * Get queue info, incloud QueueAttribute and QueueState;
+   * Set queue quota;
+   * 
+   * 
+   * @param \EMQ\Queue\SetQueueQuotaRequest $request
+   * @return \EMQ\Queue\SetQueueQuotaResponse
+   * @throws \EMQ\Common\GalaxyEmqServiceException
+   */
+  public function setQueueQuota(\EMQ\Queue\SetQueueQuotaRequest $request);
+  /**
+   * Get queue info, include QueueAttribute, QueueState and QueueQuota;
    * 
    * 
    * @param \EMQ\Queue\GetQueueInfoRequest $request
@@ -70,7 +79,7 @@ interface QueueServiceIf extends \EMQ\Common\EMQBaseServiceIf {
    */
   public function listQueue(\EMQ\Queue\ListQueueRequest $request);
   /**
-   * Set permisson for developer
+   * Set permission for developer
    * FULL_CONTROL required to use this method
    * 
    * 
@@ -329,6 +338,60 @@ class QueueServiceClient extends \EMQ\Common\EMQBaseServiceClient implements \EM
       throw $result->e;
     }
     throw new \Exception("setQueueAttribute failed: unknown result");
+  }
+
+  public function setQueueQuota(\EMQ\Queue\SetQueueQuotaRequest $request)
+  {
+    $this->send_setQueueQuota($request);
+    return $this->recv_setQueueQuota();
+  }
+
+  public function send_setQueueQuota(\EMQ\Queue\SetQueueQuotaRequest $request)
+  {
+    $args = new \EMQ\Queue\QueueService_setQueueQuota_args();
+    $args->request = $request;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'setQueueQuota', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('setQueueQuota', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_setQueueQuota()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\EMQ\Queue\QueueService_setQueueQuota_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \EMQ\Queue\QueueService_setQueueQuota_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->e !== null) {
+      throw $result->e;
+    }
+    throw new \Exception("setQueueQuota failed: unknown result");
   }
 
   public function getQueueInfo(\EMQ\Queue\GetQueueInfoRequest $request)
@@ -1371,6 +1434,191 @@ class QueueService_setQueueAttribute_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('QueueService_setQueueAttribute_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->e !== null) {
+      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
+      $xfer += $this->e->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class QueueService_setQueueQuota_args {
+  static $_TSPEC;
+
+  /**
+   * @var \EMQ\Queue\SetQueueQuotaRequest
+   */
+  public $request = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'request',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Queue\SetQueueQuotaRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['request'])) {
+        $this->request = $vals['request'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'QueueService_setQueueQuota_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->request = new \EMQ\Queue\SetQueueQuotaRequest();
+            $xfer += $this->request->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('QueueService_setQueueQuota_args');
+    if ($this->request !== null) {
+      if (!is_object($this->request)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 1);
+      $xfer += $this->request->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class QueueService_setQueueQuota_result {
+  static $_TSPEC;
+
+  /**
+   * @var \EMQ\Queue\SetQueueQuotaResponse
+   */
+  public $success = null;
+  /**
+   * @var \EMQ\Common\GalaxyEmqServiceException
+   */
+  public $e = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Queue\SetQueueQuotaResponse',
+          ),
+        1 => array(
+          'var' => 'e',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Common\GalaxyEmqServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['e'])) {
+        $this->e = $vals['e'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'QueueService_setQueueQuota_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \EMQ\Queue\SetQueueQuotaResponse();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->e = new \EMQ\Common\GalaxyEmqServiceException();
+            $xfer += $this->e->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('QueueService_setQueueQuota_result');
     if ($this->success !== null) {
       if (!is_object($this->success)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);

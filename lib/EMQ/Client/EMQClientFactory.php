@@ -11,7 +11,6 @@ use Thrift\Protocol\TCompactProtocol;
  * All rights reserved.
  * Author: shenyuannan@xiaomi.com
  */
-
 class EMQClientFactory {
   private $credential_;
   private $version_;

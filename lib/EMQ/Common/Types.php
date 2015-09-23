@@ -102,6 +102,18 @@ final class ErrorCode {
    */
   const TTRANSPORT_ERROR = 19;
   /**
+   * Quota exceeded exception.
+   */
+  const QUOTA_EXCEEDED = 20;
+  /**
+   * Quota not exist exception.
+   */
+  const QUOTA_NOT_EXIST = 21;
+  /**
+   * Quota lock failed exception.
+   */
+  const QUOTA_LOCK_FAILED = 22;
+  /**
    * Unknown exception.
    */
   const UNKNOWN = 30;
@@ -126,6 +138,9 @@ final class ErrorCode {
     17 => 'QUEUE_NOT_CACHED',
     18 => 'PARTITION_NOT_SERVING',
     19 => 'TTRANSPORT_ERROR',
+    20 => 'QUOTA_EXCEEDED',
+    21 => 'QUOTA_NOT_EXIST',
+    22 => 'QUOTA_LOCK_FAILED',
     30 => 'UNKNOWN',
   );
 }
@@ -514,7 +529,7 @@ array(
             7 =>       0,
             14 =>       1,
             19 =>       2,
-);
+    );
   }
 
   static protected function init_MAX_RETRY() {

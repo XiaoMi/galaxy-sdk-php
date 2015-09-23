@@ -45,6 +45,15 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_DEFAULT;
   static protected $GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_MINIMAL;
   static protected $GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_MAXIMAL;
+  static protected $GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_DEFAULT;
+  static protected $GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_MINIMAL;
+  static protected $GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_MAXIMAL;
+  static protected $GALAXY_EMQ_QUEUE_READ_QPS_DEFAULT;
+  static protected $GALAXY_EMQ_QUEUE_READ_QPS_MINIMAL;
+  static protected $GALAXY_EMQ_QUEUE_READ_QPS_MAXIMAL;
+  static protected $GALAXY_EMQ_QUEUE_WRITE_QPS_DEFAULT;
+  static protected $GALAXY_EMQ_QUEUE_WRITE_QPS_MINIMAL;
+  static protected $GALAXY_EMQ_QUEUE_WRITE_QPS_MAXIMAL;
 
   static protected function init_GALAXY_EMQ_QUEUE_DELAY_SECONDS_DEFAULT() {
     return     /**
@@ -178,6 +187,52 @@ final class Constant extends \Thrift\Type\TConstant {
 
   static protected function init_GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_MAXIMAL() {
     return 43200;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_DEFAULT() {
+    return     /**
+     * queue space quota
+     * default 1G (0 ~ 100G)
+     */
+1000000000;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_MINIMAL() {
+    return 0;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_MAXIMAL() {
+    return 100000000000;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_READ_QPS_DEFAULT() {
+    return     /**
+     * queue read qps, default 1000 (0 ~ 100000)
+     */
+1000;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_READ_QPS_MINIMAL() {
+    return 0;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_READ_QPS_MAXIMAL() {
+    return 100000;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_WRITE_QPS_DEFAULT() {
+    return     /**
+     * queue write qps, default 1000 (0 ~ 100000)
+     */
+1000;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_WRITE_QPS_MINIMAL() {
+    return 0;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_WRITE_QPS_MAXIMAL() {
+    return 100000;
   }
 }
 

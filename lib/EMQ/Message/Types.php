@@ -181,7 +181,7 @@ class SendMessageRequest {
   public $delaySeconds = null;
   /**
    * Invisibility seconds for this message, this will overwrite
-   * invisibilitySeconds of this queue, default 30s (0s ~ 12hour);
+   * invisibilitySeconds of this queue, default 30s (2s ~ 12hour);
    * 
    * 
    * @var int
@@ -385,7 +385,7 @@ class SendMessageResponse {
    */
   public $messageID = null;
   /**
-   * Length of messge body
+   * Length of message body
    * 
    * 
    * @var int
@@ -534,7 +534,7 @@ class SendMessageBatchRequestEntry {
   static $_TSPEC;
 
   /**
-   * The identifier for this partitcular receipt handle;
+   * The identifier for this particular receipt handle;
    * Using to identify the result in response;
    * Need to be unique within one batch
    * 
@@ -559,7 +559,7 @@ class SendMessageBatchRequestEntry {
   public $delaySeconds = null;
   /**
    * Invisibility seconds for this message, this will overwrite
-   * invisibilitySeconds of this queue, default 30s (0s ~ 12hour);
+   * invisibilitySeconds of this queue, default 30s (2s ~ 12hour);
    * 
    * 
    * @var int
@@ -902,7 +902,7 @@ class SendMessageBatchResponseEntry {
    */
   public $messageID = null;
   /**
-   * Length of messge body
+   * Length of message body
    * 
    * 
    * @var int
@@ -1176,7 +1176,7 @@ class SendMessageBatchResponse {
   static $_TSPEC;
 
   /**
-   * The sucessful results list;
+   * The successful results list;
    * 
    * 
    * @var \EMQ\Message\SendMessageBatchResponseEntry[]
@@ -1799,7 +1799,7 @@ class ChangeMessageVisibilityRequest {
    */
   public $receiptHandle = null;
   /**
-   * The extra invisibilitySeconds for this message
+   * The extra invisibilitySeconds for this message (0s ~ 12hour)
    * 
    * 
    * @var int
@@ -1922,9 +1922,9 @@ class ChangeMessageVisibilityBatchRequestEntry {
    */
   public $receiptHandle = null;
   /**
-   * The extra invisibilitySeconds for this message
-   * 
-   * 
+   * The extra invisibilitySeconds for this message (0s ~ 12hour)
+   *
+   *
    * @var int
    */
   public $invisibilitySeconds = null;
@@ -2151,7 +2151,7 @@ class ChangeMessageVisibilityBatchResponse {
   static $_TSPEC;
 
   /**
-   * The sucessful receipt handle;
+   * The successful receipt handle;
    * 
    * 
    * @var string[]
@@ -2624,7 +2624,7 @@ class DeleteMessageBatchResponse {
   static $_TSPEC;
 
   /**
-   * The sucessful receipt handle;
+   * The successful receipt handle;
    * 
    * 
    * @var string[]

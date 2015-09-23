@@ -11,6 +11,10 @@ use EMQ\Message\ReceiveMessageRequest;
 use EMQ\Message\SendMessageRequest;
 use EMQ\Queue\CreateQueueRequest;
 use EMQ\Queue\DeleteQueueRequest;
+use EMQ\Queue\QueueQuota;
+use EMQ\Queue\SetQueueQuotaRequest;
+use EMQ\Queue\SpaceQuota;
+use EMQ\Queue\Throughput;
 use RPC\Auth\Credential;
 use RPC\Auth\UserType;
 use Thrift\Exception\TException;
@@ -37,8 +41,14 @@ $messageClient = $clientFactory->newDefaultMessageClient();
 
 
 try {
-  $createQueueRequest = new CreateQueueRequest(array('queueName' => $name));
+  $createQueueRequest = new CreateQueueRequest(array(
+      'queueName' => $name,
+      'queueQuota' => new QueueQuota(array(
+          'spaceQuota' => new SpaceQuota(array('size' => 100)),
+          'throughput' => new Throughput(array('readQps' => 100, 'writeQps' => 100))
+      ))));
   $createQueueResponse = $queueClient->createQueue($createQueueRequest);
+  print_r($createQueueResponse);
   $queueName = $createQueueResponse->queueName;
 
   $messageBody = "EMQExample";
@@ -88,11 +98,19 @@ try {
     echo "Delete Messages.\n\n";
   }
 
+  $setQueueQuotaRequest = new SetQueueQuotaRequest(array(
+      'queueName' => $queueName,
+      'queueQuota' => new QueueQuota(array(
+          'throughput' => new Throughput(array('readQps' => 111, 'writeQps' => 111))
+      ))));
+  $response = $queueClient->setQueueQuota($setQueueQuotaRequest);
+  print_r($response);
+
   $deleteQueueRequest = new DeleteQueueRequest();
   $deleteQueueRequest->queueName = $queueName;
   $queueClient->deleteQueue($deleteQueueRequest);
 } catch (GalaxyEmqServiceException $e) {
   echo "Failed: $e->errMsg: $e->details";
 } catch (TException $e) {
-  echo "Failed: ".$e->getMessage()."\n\n";
+  echo "Failed: " . $e->getMessage() . "\n\n";
 }
