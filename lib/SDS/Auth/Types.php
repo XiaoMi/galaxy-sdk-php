@@ -85,12 +85,14 @@ final class AppUserAuthProvider {
   const QQ_OAUTH = 3;
   const SINA_OAUTH = 4;
   const RENREN_OAUTH = 5;
+  const WEIXIN_OAUTH = 6;
   static public $__names = array(
     1 => 'XIAOMI_SSO',
     2 => 'XIAOMI_OAUTH',
     3 => 'QQ_OAUTH',
     4 => 'SINA_OAUTH',
     5 => 'RENREN_OAUTH',
+    6 => 'WEIXIN_OAUTH',
   );
 }
 
@@ -228,6 +230,7 @@ class Credential {
 }
 
 /**
+ * 兼容旧sdk
  * Authorization头包含的内容
  */
 class HttpAuthorizationHeader {
@@ -507,12 +510,224 @@ class HttpAuthorizationHeader {
 
 }
 
+/**
+ * Oauth认证信息
+ */
+class OAuthInfo {
+  static $_TSPEC;
+
+  /**
+   * 小米AppId
+   * 
+   * @var string
+   */
+  public $xiaomiAppId = null;
+  /**
+   * 第三方身份认证提供方
+   * 
+   * @var int
+   */
+  public $appUserAuthProvider = null;
+  /**
+   * 第三方认证的accessToken
+   * 
+   * @var string
+   */
+  public $accessToken = null;
+  /**
+   * 仅用于微信OAuth认证
+   * 
+   * @var string
+   */
+  public $openId = null;
+  /**
+   * 仅用于小米OAuth认证
+   * 
+   * @var string
+   */
+  public $macKey = null;
+  /**
+   * 仅用于小米OAuth认证
+   * 
+   * @var string
+   */
+  public $macAlgorithm = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'xiaomiAppId',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'appUserAuthProvider',
+          'type' => TType::I32,
+          ),
+        3 => array(
+          'var' => 'accessToken',
+          'type' => TType::STRING,
+          ),
+        4 => array(
+          'var' => 'openId',
+          'type' => TType::STRING,
+          ),
+        5 => array(
+          'var' => 'macKey',
+          'type' => TType::STRING,
+          ),
+        6 => array(
+          'var' => 'macAlgorithm',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['xiaomiAppId'])) {
+        $this->xiaomiAppId = $vals['xiaomiAppId'];
+      }
+      if (isset($vals['appUserAuthProvider'])) {
+        $this->appUserAuthProvider = $vals['appUserAuthProvider'];
+      }
+      if (isset($vals['accessToken'])) {
+        $this->accessToken = $vals['accessToken'];
+      }
+      if (isset($vals['openId'])) {
+        $this->openId = $vals['openId'];
+      }
+      if (isset($vals['macKey'])) {
+        $this->macKey = $vals['macKey'];
+      }
+      if (isset($vals['macAlgorithm'])) {
+        $this->macAlgorithm = $vals['macAlgorithm'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'OAuthInfo';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->xiaomiAppId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->appUserAuthProvider);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->accessToken);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->openId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->macKey);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 6:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->macAlgorithm);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('OAuthInfo');
+    if ($this->xiaomiAppId !== null) {
+      $xfer += $output->writeFieldBegin('xiaomiAppId', TType::STRING, 1);
+      $xfer += $output->writeString($this->xiaomiAppId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->appUserAuthProvider !== null) {
+      $xfer += $output->writeFieldBegin('appUserAuthProvider', TType::I32, 2);
+      $xfer += $output->writeI32($this->appUserAuthProvider);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->accessToken !== null) {
+      $xfer += $output->writeFieldBegin('accessToken', TType::STRING, 3);
+      $xfer += $output->writeString($this->accessToken);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->openId !== null) {
+      $xfer += $output->writeFieldBegin('openId', TType::STRING, 4);
+      $xfer += $output->writeString($this->openId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->macKey !== null) {
+      $xfer += $output->writeFieldBegin('macKey', TType::STRING, 5);
+      $xfer += $output->writeString($this->macKey);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->macAlgorithm !== null) {
+      $xfer += $output->writeFieldBegin('macAlgorithm', TType::STRING, 6);
+      $xfer += $output->writeString($this->macAlgorithm);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 final class Constant extends \Thrift\Type\TConstant {
   static protected $SIGNATURE_SUPPORT;
+  static protected $HK_AUTHORIZATION;
   static protected $HK_HOST;
   static protected $HK_TIMESTAMP;
   static protected $HK_CONTENT_MD5;
-  static protected $HK_AUTHORIZATION;
+  static protected $HK_VERSION;
+  static protected $HK_USER_TYPE;
+  static protected $HK_SECRET_KEY_ID;
+  static protected $HK_SECRET_KEY;
+  static protected $HK_SIGNATURE;
+  static protected $HK_MAC_ALGORITHM;
+  static protected $HK_SUPPORT_ACCOUNT_KEY;
   static protected $SUGGESTED_SIGNATURE_HEADERS;
 
   static protected function init_SIGNATURE_SUPPORT() {
@@ -527,6 +742,13 @@ array(
             12 => false,
             13 => false,
     );
+  }
+
+  static protected function init_HK_AUTHORIZATION() {
+    return     /**
+     * 内容为TJSONTransport.encode(HttpAuthorizationHeader)
+     */
+"Authorization";
   }
 
   static protected function init_HK_HOST() {
@@ -549,16 +771,57 @@ array(
     return "X-Xiaomi-Content-MD5";
   }
 
-  static protected function init_HK_AUTHORIZATION() {
+  static protected function init_HK_VERSION() {
     return     /**
-     * 内容为TJSONTransport.encode(HttpAuthorizationHeader)
+     * 认证相关的HTTP头
      */
-"Authorization";
+"X-Xiaomi-Version";
+  }
+
+  static protected function init_HK_USER_TYPE() {
+    return "X-Xiaomi-User-Type";
+  }
+
+  static protected function init_HK_SECRET_KEY_ID() {
+    return "X-Xiaomi-Secret-Key-Id";
+  }
+
+  static protected function init_HK_SECRET_KEY() {
+    return     /**
+     * 直接使用secretKey，此项被设置时，signature将被忽略，
+     * 非安全传输应使用签名
+     */
+"X-Xiaomi-Secret-Key";
+  }
+
+  static protected function init_HK_SIGNATURE() {
+    return     /**
+     * 如secretKey未设置，则认为使用签名，此时必须设置，
+     * 被签名的正文格式：header1[\nheader2[\nheader3[...]]]，
+     * 如使用默认SUGGESTED_SIGNATURE_HEADERS时为：$host\n$timestamp\n$md5
+     */
+"X-Xiaomi-Signature";
+  }
+
+  static protected function init_HK_MAC_ALGORITHM() {
+    return     /**
+     * 签名HMAC算法，客户端可定制，
+     * 使用签名时必须设置
+     */
+"X-Xiaomi-Mac-Algorithm";
+  }
+
+  static protected function init_HK_SUPPORT_ACCOUNT_KEY() {
+    return     /**
+     * 向后兼容，在APP_SECRET的用户身份下成为DevelopUser
+     */
+"X-Xiaomi-Support-Account-Key";
   }
 
   static protected function init_SUGGESTED_SIGNATURE_HEADERS() {
     return     /**
-     * 建议签名应包含的HTTP头
+     * 建议签名应包含的HTTP头，包含所有签名涉及到的部分，服务端未强制必须使用所列headers，
+     * 定制的client自己负责签名的安全强度，使用签名时必须设置
      */
 array(
       "Host",

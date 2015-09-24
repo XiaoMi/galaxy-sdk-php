@@ -51,13 +51,6 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    */
   public function findAllTables();
   /**
-   * 清除所有延迟删除的表
-   * 
-   * @return string[]
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function cleanAllLazyDroppedTables();
-  /**
    * 创建表
    * 
    * @param string $tableName
@@ -75,12 +68,12 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    */
   public function dropTable($tableName);
   /**
-   * 恢复表
+   * 延迟删除表
    * 
    * @param string $tableName
    * @throws \SDS\Errors\ServiceException
    */
-  public function restoreTable($tableName);
+  public function lazyDropTable($tableName);
   /**
    * 修改表
    * 
@@ -188,6 +181,64 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function putClientMetrics(\SDS\Admin\ClientMetrics $clientMetrics);
+  /**
+   * 添加关注电话
+   * 
+   * @param string $tableName
+   * @param string $phoneNumber
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function subscribePhoneAlert($tableName, $phoneNumber);
+  /**
+   * 取消关注电话
+   * 
+   * @param string $tableName
+   * @param string $phoneNumber
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function unsubscribePhoneAlert($tableName, $phoneNumber);
+  /**
+   * 添加关注邮箱
+   * 
+   * @param string $tableName
+   * @param string $email
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function subscribeEmailAlert($tableName, $email);
+  /**
+   * 取消关注邮箱
+   * 
+   * @param string $tableName
+   * @param string $email
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function unsubscribeEmailAlert($tableName, $email);
+  /**
+   * 查看关注某个表的电话
+   * 
+   * @param string $tableName
+   * @return string[]
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function listSubscribedPhone($tableName);
+  /**
+   * 查看关注某个表的邮箱地址
+   * 
+   * @param string $tableName
+   * @return string[]
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function listSubscribedEmail($tableName);
+  /**
+   * 获取表空间历史大小
+   * 
+   * @param string $tableName
+   * @param int $startDate
+   * @param int $stopDate
+   * @return array
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function getTableHistorySize($tableName, $startDate, $stopDate);
 }
 
 class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Admin\AdminServiceIf {
@@ -406,59 +457,6 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("findAllTables failed: unknown result");
   }
 
-  public function cleanAllLazyDroppedTables()
-  {
-    $this->send_cleanAllLazyDroppedTables();
-    return $this->recv_cleanAllLazyDroppedTables();
-  }
-
-  public function send_cleanAllLazyDroppedTables()
-  {
-    $args = new \SDS\Admin\AdminService_cleanAllLazyDroppedTables_args();
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'cleanAllLazyDroppedTables', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('cleanAllLazyDroppedTables', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_cleanAllLazyDroppedTables()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_cleanAllLazyDroppedTables_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_cleanAllLazyDroppedTables_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("cleanAllLazyDroppedTables failed: unknown result");
-  }
-
   public function createTable($tableName, \SDS\Table\TableSpec $tableSpec)
   {
     $this->send_createTable($tableName, $tableSpec);
@@ -565,34 +563,34 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function restoreTable($tableName)
+  public function lazyDropTable($tableName)
   {
-    $this->send_restoreTable($tableName);
-    $this->recv_restoreTable();
+    $this->send_lazyDropTable($tableName);
+    $this->recv_lazyDropTable();
   }
 
-  public function send_restoreTable($tableName)
+  public function send_lazyDropTable($tableName)
   {
-    $args = new \SDS\Admin\AdminService_restoreTable_args();
+    $args = new \SDS\Admin\AdminService_lazyDropTable_args();
     $args->tableName = $tableName;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
-      thrift_protocol_write_binary($this->output_, 'restoreTable', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+      thrift_protocol_write_binary($this->output_, 'lazyDropTable', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
     }
     else
     {
-      $this->output_->writeMessageBegin('restoreTable', TMessageType::CALL, $this->seqid_);
+      $this->output_->writeMessageBegin('lazyDropTable', TMessageType::CALL, $this->seqid_);
       $args->write($this->output_);
       $this->output_->writeMessageEnd();
       $this->output_->getTransport()->flush();
     }
   }
 
-  public function recv_restoreTable()
+  public function recv_lazyDropTable()
   {
     $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_restoreTable_result', $this->input_->isStrictRead());
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_lazyDropTable_result', $this->input_->isStrictRead());
     else
     {
       $rseqid = 0;
@@ -606,7 +604,7 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
         $this->input_->readMessageEnd();
         throw $x;
       }
-      $result = new \SDS\Admin\AdminService_restoreTable_result();
+      $result = new \SDS\Admin\AdminService_lazyDropTable_result();
       $result->read($this->input_);
       $this->input_->readMessageEnd();
     }
@@ -1307,6 +1305,378 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
+  public function subscribePhoneAlert($tableName, $phoneNumber)
+  {
+    $this->send_subscribePhoneAlert($tableName, $phoneNumber);
+    $this->recv_subscribePhoneAlert();
+  }
+
+  public function send_subscribePhoneAlert($tableName, $phoneNumber)
+  {
+    $args = new \SDS\Admin\AdminService_subscribePhoneAlert_args();
+    $args->tableName = $tableName;
+    $args->phoneNumber = $phoneNumber;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'subscribePhoneAlert', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('subscribePhoneAlert', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_subscribePhoneAlert()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_subscribePhoneAlert_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_subscribePhoneAlert_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    return;
+  }
+
+  public function unsubscribePhoneAlert($tableName, $phoneNumber)
+  {
+    $this->send_unsubscribePhoneAlert($tableName, $phoneNumber);
+    $this->recv_unsubscribePhoneAlert();
+  }
+
+  public function send_unsubscribePhoneAlert($tableName, $phoneNumber)
+  {
+    $args = new \SDS\Admin\AdminService_unsubscribePhoneAlert_args();
+    $args->tableName = $tableName;
+    $args->phoneNumber = $phoneNumber;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'unsubscribePhoneAlert', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('unsubscribePhoneAlert', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_unsubscribePhoneAlert()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_unsubscribePhoneAlert_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_unsubscribePhoneAlert_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    return;
+  }
+
+  public function subscribeEmailAlert($tableName, $email)
+  {
+    $this->send_subscribeEmailAlert($tableName, $email);
+    $this->recv_subscribeEmailAlert();
+  }
+
+  public function send_subscribeEmailAlert($tableName, $email)
+  {
+    $args = new \SDS\Admin\AdminService_subscribeEmailAlert_args();
+    $args->tableName = $tableName;
+    $args->email = $email;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'subscribeEmailAlert', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('subscribeEmailAlert', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_subscribeEmailAlert()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_subscribeEmailAlert_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_subscribeEmailAlert_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    return;
+  }
+
+  public function unsubscribeEmailAlert($tableName, $email)
+  {
+    $this->send_unsubscribeEmailAlert($tableName, $email);
+    $this->recv_unsubscribeEmailAlert();
+  }
+
+  public function send_unsubscribeEmailAlert($tableName, $email)
+  {
+    $args = new \SDS\Admin\AdminService_unsubscribeEmailAlert_args();
+    $args->tableName = $tableName;
+    $args->email = $email;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'unsubscribeEmailAlert', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('unsubscribeEmailAlert', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_unsubscribeEmailAlert()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_unsubscribeEmailAlert_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_unsubscribeEmailAlert_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    return;
+  }
+
+  public function listSubscribedPhone($tableName)
+  {
+    $this->send_listSubscribedPhone($tableName);
+    return $this->recv_listSubscribedPhone();
+  }
+
+  public function send_listSubscribedPhone($tableName)
+  {
+    $args = new \SDS\Admin\AdminService_listSubscribedPhone_args();
+    $args->tableName = $tableName;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'listSubscribedPhone', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('listSubscribedPhone', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_listSubscribedPhone()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_listSubscribedPhone_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_listSubscribedPhone_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("listSubscribedPhone failed: unknown result");
+  }
+
+  public function listSubscribedEmail($tableName)
+  {
+    $this->send_listSubscribedEmail($tableName);
+    return $this->recv_listSubscribedEmail();
+  }
+
+  public function send_listSubscribedEmail($tableName)
+  {
+    $args = new \SDS\Admin\AdminService_listSubscribedEmail_args();
+    $args->tableName = $tableName;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'listSubscribedEmail', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('listSubscribedEmail', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_listSubscribedEmail()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_listSubscribedEmail_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_listSubscribedEmail_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("listSubscribedEmail failed: unknown result");
+  }
+
+  public function getTableHistorySize($tableName, $startDate, $stopDate)
+  {
+    $this->send_getTableHistorySize($tableName, $startDate, $stopDate);
+    return $this->recv_getTableHistorySize();
+  }
+
+  public function send_getTableHistorySize($tableName, $startDate, $stopDate)
+  {
+    $args = new \SDS\Admin\AdminService_getTableHistorySize_args();
+    $args->tableName = $tableName;
+    $args->startDate = $startDate;
+    $args->stopDate = $stopDate;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'getTableHistorySize', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('getTableHistorySize', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_getTableHistorySize()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getTableHistorySize_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_getTableHistorySize_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("getTableHistorySize failed: unknown result");
+  }
+
 }
 
 // HELPER FUNCTIONS AND STRUCTURES
@@ -2004,182 +2374,6 @@ class AdminService_findAllTables_result {
 
 }
 
-class AdminService_cleanAllLazyDroppedTables_args {
-  static $_TSPEC;
-
-
-  public function __construct() {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        );
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_cleanAllLazyDroppedTables_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_cleanAllLazyDroppedTables_args');
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_cleanAllLazyDroppedTables_result {
-  static $_TSPEC;
-
-  /**
-   * @var string[]
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::LST,
-          'etype' => TType::STRING,
-          'elem' => array(
-            'type' => TType::STRING,
-            ),
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_cleanAllLazyDroppedTables_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::LST) {
-            $this->success = array();
-            $_size48 = 0;
-            $_etype51 = 0;
-            $xfer += $input->readListBegin($_etype51, $_size48);
-            for ($_i52 = 0; $_i52 < $_size48; ++$_i52)
-            {
-              $elem53 = null;
-              $xfer += $input->readString($elem53);
-              $this->success []= $elem53;
-            }
-            $xfer += $input->readListEnd();
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_cleanAllLazyDroppedTables_result');
-    if ($this->success !== null) {
-      if (!is_array($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
-      {
-        $output->writeListBegin(TType::STRING, count($this->success));
-        {
-          foreach ($this->success as $iter54)
-          {
-            $xfer += $output->writeString($iter54);
-          }
-        }
-        $output->writeListEnd();
-      }
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
 class AdminService_createTable_args {
   static $_TSPEC;
 
@@ -2540,7 +2734,7 @@ class AdminService_dropTable_result {
 
 }
 
-class AdminService_restoreTable_args {
+class AdminService_lazyDropTable_args {
   static $_TSPEC;
 
   /**
@@ -2565,7 +2759,7 @@ class AdminService_restoreTable_args {
   }
 
   public function getName() {
-    return 'AdminService_restoreTable_args';
+    return 'AdminService_lazyDropTable_args';
   }
 
   public function read($input)
@@ -2602,7 +2796,7 @@ class AdminService_restoreTable_args {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_restoreTable_args');
+    $xfer += $output->writeStructBegin('AdminService_lazyDropTable_args');
     if ($this->tableName !== null) {
       $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
       $xfer += $output->writeString($this->tableName);
@@ -2615,7 +2809,7 @@ class AdminService_restoreTable_args {
 
 }
 
-class AdminService_restoreTable_result {
+class AdminService_lazyDropTable_result {
   static $_TSPEC;
 
   /**
@@ -2641,7 +2835,7 @@ class AdminService_restoreTable_result {
   }
 
   public function getName() {
-    return 'AdminService_restoreTable_result';
+    return 'AdminService_lazyDropTable_result';
   }
 
   public function read($input)
@@ -2679,7 +2873,7 @@ class AdminService_restoreTable_result {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_restoreTable_result');
+    $xfer += $output->writeStructBegin('AdminService_lazyDropTable_result');
     if ($this->se !== null) {
       $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
       $xfer += $this->se->write($output);
@@ -4002,6 +4196,27 @@ class AdminService_getTableSplits_args {
         case 2:
           if ($ftype == TType::MAP) {
             $this->startKey = array();
+            $_size48 = 0;
+            $_ktype49 = 0;
+            $_vtype50 = 0;
+            $xfer += $input->readMapBegin($_ktype49, $_vtype50, $_size48);
+            for ($_i52 = 0; $_i52 < $_size48; ++$_i52)
+            {
+              $key53 = '';
+              $val54 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key53);
+              $val54 = new \SDS\Table\Datum();
+              $xfer += $val54->read($input);
+              $this->startKey[$key53] = $val54;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::MAP) {
+            $this->stopKey = array();
             $_size55 = 0;
             $_ktype56 = 0;
             $_vtype57 = 0;
@@ -4013,28 +4228,7 @@ class AdminService_getTableSplits_args {
               $xfer += $input->readString($key60);
               $val61 = new \SDS\Table\Datum();
               $xfer += $val61->read($input);
-              $this->startKey[$key60] = $val61;
-            }
-            $xfer += $input->readMapEnd();
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::MAP) {
-            $this->stopKey = array();
-            $_size62 = 0;
-            $_ktype63 = 0;
-            $_vtype64 = 0;
-            $xfer += $input->readMapBegin($_ktype63, $_vtype64, $_size62);
-            for ($_i66 = 0; $_i66 < $_size62; ++$_i66)
-            {
-              $key67 = '';
-              $val68 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key67);
-              $val68 = new \SDS\Table\Datum();
-              $xfer += $val68->read($input);
-              $this->stopKey[$key67] = $val68;
+              $this->stopKey[$key60] = $val61;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4067,10 +4261,10 @@ class AdminService_getTableSplits_args {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->startKey));
         {
-          foreach ($this->startKey as $kiter69 => $viter70)
+          foreach ($this->startKey as $kiter62 => $viter63)
           {
-            $xfer += $output->writeString($kiter69);
-            $xfer += $viter70->write($output);
+            $xfer += $output->writeString($kiter62);
+            $xfer += $viter63->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4085,10 +4279,10 @@ class AdminService_getTableSplits_args {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->stopKey));
         {
-          foreach ($this->stopKey as $kiter71 => $viter72)
+          foreach ($this->stopKey as $kiter64 => $viter65)
           {
-            $xfer += $output->writeString($kiter71);
-            $xfer += $viter72->write($output);
+            $xfer += $output->writeString($kiter64);
+            $xfer += $viter65->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4165,15 +4359,15 @@ class AdminService_getTableSplits_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size73 = 0;
-            $_etype76 = 0;
-            $xfer += $input->readListBegin($_etype76, $_size73);
-            for ($_i77 = 0; $_i77 < $_size73; ++$_i77)
+            $_size66 = 0;
+            $_etype69 = 0;
+            $xfer += $input->readListBegin($_etype69, $_size66);
+            for ($_i70 = 0; $_i70 < $_size66; ++$_i70)
             {
-              $elem78 = null;
-              $elem78 = new \SDS\Table\TableSplit();
-              $xfer += $elem78->read($input);
-              $this->success []= $elem78;
+              $elem71 = null;
+              $elem71 = new \SDS\Table\TableSplit();
+              $xfer += $elem71->read($input);
+              $this->success []= $elem71;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4209,9 +4403,9 @@ class AdminService_getTableSplits_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter79)
+          foreach ($this->success as $iter72)
           {
-            $xfer += $iter79->write($output);
+            $xfer += $iter72->write($output);
           }
         }
         $output->writeListEnd();
@@ -4466,15 +4660,15 @@ class AdminService_queryMetrics_args {
         case 1:
           if ($ftype == TType::LST) {
             $this->queries = array();
-            $_size80 = 0;
-            $_etype83 = 0;
-            $xfer += $input->readListBegin($_etype83, $_size80);
-            for ($_i84 = 0; $_i84 < $_size80; ++$_i84)
+            $_size73 = 0;
+            $_etype76 = 0;
+            $xfer += $input->readListBegin($_etype76, $_size73);
+            for ($_i77 = 0; $_i77 < $_size73; ++$_i77)
             {
-              $elem85 = null;
-              $elem85 = new \SDS\Admin\MetricQueryRequest();
-              $xfer += $elem85->read($input);
-              $this->queries []= $elem85;
+              $elem78 = null;
+              $elem78 = new \SDS\Admin\MetricQueryRequest();
+              $xfer += $elem78->read($input);
+              $this->queries []= $elem78;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4502,9 +4696,9 @@ class AdminService_queryMetrics_args {
       {
         $output->writeListBegin(TType::STRUCT, count($this->queries));
         {
-          foreach ($this->queries as $iter86)
+          foreach ($this->queries as $iter79)
           {
-            $xfer += $iter86->write($output);
+            $xfer += $iter79->write($output);
           }
         }
         $output->writeListEnd();
@@ -4581,15 +4775,15 @@ class AdminService_queryMetrics_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size87 = 0;
-            $_etype90 = 0;
-            $xfer += $input->readListBegin($_etype90, $_size87);
-            for ($_i91 = 0; $_i91 < $_size87; ++$_i91)
+            $_size80 = 0;
+            $_etype83 = 0;
+            $xfer += $input->readListBegin($_etype83, $_size80);
+            for ($_i84 = 0; $_i84 < $_size80; ++$_i84)
             {
-              $elem92 = null;
-              $elem92 = new \SDS\Admin\TimeSeriesData();
-              $xfer += $elem92->read($input);
-              $this->success []= $elem92;
+              $elem85 = null;
+              $elem85 = new \SDS\Admin\TimeSeriesData();
+              $xfer += $elem85->read($input);
+              $this->success []= $elem85;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4625,9 +4819,9 @@ class AdminService_queryMetrics_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter93)
+          foreach ($this->success as $iter86)
           {
-            $xfer += $iter93->write($output);
+            $xfer += $iter86->write($output);
           }
         }
         $output->writeListEnd();
@@ -4759,15 +4953,15 @@ class AdminService_findAllAppInfo_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size94 = 0;
-            $_etype97 = 0;
-            $xfer += $input->readListBegin($_etype97, $_size94);
-            for ($_i98 = 0; $_i98 < $_size94; ++$_i98)
+            $_size87 = 0;
+            $_etype90 = 0;
+            $xfer += $input->readListBegin($_etype90, $_size87);
+            for ($_i91 = 0; $_i91 < $_size87; ++$_i91)
             {
-              $elem99 = null;
-              $elem99 = new \SDS\Admin\AppInfo();
-              $xfer += $elem99->read($input);
-              $this->success []= $elem99;
+              $elem92 = null;
+              $elem92 = new \SDS\Admin\AppInfo();
+              $xfer += $elem92->read($input);
+              $this->success []= $elem92;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4803,9 +4997,9 @@ class AdminService_findAllAppInfo_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter100)
+          foreach ($this->success as $iter93)
           {
-            $xfer += $iter100->write($output);
+            $xfer += $iter93->write($output);
           }
         }
         $output->writeListEnd();
@@ -5144,6 +5338,1363 @@ class AdminService_putClientMetrics_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_putClientMetrics_result');
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_subscribePhoneAlert_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $phoneNumber = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'phoneNumber',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['phoneNumber'])) {
+        $this->phoneNumber = $vals['phoneNumber'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_subscribePhoneAlert_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->phoneNumber);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_subscribePhoneAlert_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->phoneNumber !== null) {
+      $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 2);
+      $xfer += $output->writeString($this->phoneNumber);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_subscribePhoneAlert_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_subscribePhoneAlert_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_subscribePhoneAlert_result');
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_unsubscribePhoneAlert_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $phoneNumber = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'phoneNumber',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['phoneNumber'])) {
+        $this->phoneNumber = $vals['phoneNumber'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_unsubscribePhoneAlert_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->phoneNumber);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_unsubscribePhoneAlert_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->phoneNumber !== null) {
+      $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 2);
+      $xfer += $output->writeString($this->phoneNumber);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_unsubscribePhoneAlert_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_unsubscribePhoneAlert_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_unsubscribePhoneAlert_result');
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_subscribeEmailAlert_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $email = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'email',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['email'])) {
+        $this->email = $vals['email'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_subscribeEmailAlert_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->email);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_subscribeEmailAlert_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->email !== null) {
+      $xfer += $output->writeFieldBegin('email', TType::STRING, 2);
+      $xfer += $output->writeString($this->email);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_subscribeEmailAlert_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_subscribeEmailAlert_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_subscribeEmailAlert_result');
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_unsubscribeEmailAlert_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $email = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'email',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['email'])) {
+        $this->email = $vals['email'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_unsubscribeEmailAlert_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->email);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_unsubscribeEmailAlert_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->email !== null) {
+      $xfer += $output->writeFieldBegin('email', TType::STRING, 2);
+      $xfer += $output->writeString($this->email);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_unsubscribeEmailAlert_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_unsubscribeEmailAlert_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_unsubscribeEmailAlert_result');
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_listSubscribedPhone_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_listSubscribedPhone_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_listSubscribedPhone_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_listSubscribedPhone_result {
+  static $_TSPEC;
+
+  /**
+   * @var string[]
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::LST,
+          'etype' => TType::STRING,
+          'elem' => array(
+            'type' => TType::STRING,
+            ),
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_listSubscribedPhone_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::LST) {
+            $this->success = array();
+            $_size94 = 0;
+            $_etype97 = 0;
+            $xfer += $input->readListBegin($_etype97, $_size94);
+            for ($_i98 = 0; $_i98 < $_size94; ++$_i98)
+            {
+              $elem99 = null;
+              $xfer += $input->readString($elem99);
+              $this->success []= $elem99;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_listSubscribedPhone_result');
+    if ($this->success !== null) {
+      if (!is_array($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
+      {
+        $output->writeListBegin(TType::STRING, count($this->success));
+        {
+          foreach ($this->success as $iter100)
+          {
+            $xfer += $output->writeString($iter100);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_listSubscribedEmail_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_listSubscribedEmail_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_listSubscribedEmail_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_listSubscribedEmail_result {
+  static $_TSPEC;
+
+  /**
+   * @var string[]
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::LST,
+          'etype' => TType::STRING,
+          'elem' => array(
+            'type' => TType::STRING,
+            ),
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_listSubscribedEmail_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::LST) {
+            $this->success = array();
+            $_size101 = 0;
+            $_etype104 = 0;
+            $xfer += $input->readListBegin($_etype104, $_size101);
+            for ($_i105 = 0; $_i105 < $_size101; ++$_i105)
+            {
+              $elem106 = null;
+              $xfer += $input->readString($elem106);
+              $this->success []= $elem106;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_listSubscribedEmail_result');
+    if ($this->success !== null) {
+      if (!is_array($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
+      {
+        $output->writeListBegin(TType::STRING, count($this->success));
+        {
+          foreach ($this->success as $iter107)
+          {
+            $xfer += $output->writeString($iter107);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getTableHistorySize_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var int
+   */
+  public $startDate = null;
+  /**
+   * @var int
+   */
+  public $stopDate = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'startDate',
+          'type' => TType::I64,
+          ),
+        3 => array(
+          'var' => 'stopDate',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['startDate'])) {
+        $this->startDate = $vals['startDate'];
+      }
+      if (isset($vals['stopDate'])) {
+        $this->stopDate = $vals['stopDate'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getTableHistorySize_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->startDate);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->stopDate);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getTableHistorySize_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->startDate !== null) {
+      $xfer += $output->writeFieldBegin('startDate', TType::I64, 2);
+      $xfer += $output->writeI64($this->startDate);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->stopDate !== null) {
+      $xfer += $output->writeFieldBegin('stopDate', TType::I64, 3);
+      $xfer += $output->writeI64($this->stopDate);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getTableHistorySize_result {
+  static $_TSPEC;
+
+  /**
+   * @var array
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::MAP,
+          'ktype' => TType::I64,
+          'vtype' => TType::I64,
+          'key' => array(
+            'type' => TType::I64,
+          ),
+          'val' => array(
+            'type' => TType::I64,
+            ),
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getTableHistorySize_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::MAP) {
+            $this->success = array();
+            $_size108 = 0;
+            $_ktype109 = 0;
+            $_vtype110 = 0;
+            $xfer += $input->readMapBegin($_ktype109, $_vtype110, $_size108);
+            for ($_i112 = 0; $_i112 < $_size108; ++$_i112)
+            {
+              $key113 = 0;
+              $val114 = 0;
+              $xfer += $input->readI64($key113);
+              $xfer += $input->readI64($val114);
+              $this->success[$key113] = $val114;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getTableHistorySize_result');
+    if ($this->success !== null) {
+      if (!is_array($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::MAP, 0);
+      {
+        $output->writeMapBegin(TType::I64, TType::I64, count($this->success));
+        {
+          foreach ($this->success as $kiter115 => $viter116)
+          {
+            $xfer += $output->writeI64($kiter115);
+            $xfer += $output->writeI64($viter116);
+          }
+        }
+        $output->writeMapEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->se !== null) {
       $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
       $xfer += $this->se->write($output);

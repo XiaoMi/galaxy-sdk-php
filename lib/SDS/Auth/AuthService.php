@@ -23,14 +23,12 @@ interface AuthServiceIf extends \SDS\Common\BaseServiceIf {
   /**
    * 通过第三方认证系统换发Storage Access Token，采用App Secret登录无需此过程
    * 
-   * @param string $xiaomiAppId
-   * @param int $appUserAuthProvider
-   * @param string $authToken
+   * @param \SDS\Auth\OAuthInfo $oauthInfo
    * @return \SDS\Auth\Credential 小米存储系统认证信息
    * 
    * @throws \SDS\Errors\ServiceException
    */
-  public function createCredential($xiaomiAppId, $appUserAuthProvider, $authToken);
+  public function createCredential(\SDS\Auth\OAuthInfo $oauthInfo);
 }
 
 class AuthServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Auth\AuthServiceIf {
@@ -38,18 +36,16 @@ class AuthServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Au
     parent::__construct($input, $output);
   }
 
-  public function createCredential($xiaomiAppId, $appUserAuthProvider, $authToken)
+  public function createCredential(\SDS\Auth\OAuthInfo $oauthInfo)
   {
-    $this->send_createCredential($xiaomiAppId, $appUserAuthProvider, $authToken);
+    $this->send_createCredential($oauthInfo);
     return $this->recv_createCredential();
   }
 
-  public function send_createCredential($xiaomiAppId, $appUserAuthProvider, $authToken)
+  public function send_createCredential(\SDS\Auth\OAuthInfo $oauthInfo)
   {
     $args = new \SDS\Auth\AuthService_createCredential_args();
-    $args->xiaomiAppId = $xiaomiAppId;
-    $args->appUserAuthProvider = $appUserAuthProvider;
-    $args->authToken = $authToken;
+    $args->oauthInfo = $oauthInfo;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -102,44 +98,23 @@ class AuthService_createCredential_args {
   static $_TSPEC;
 
   /**
-   * @var string
+   * @var \SDS\Auth\OAuthInfo
    */
-  public $xiaomiAppId = null;
-  /**
-   * @var int
-   */
-  public $appUserAuthProvider = null;
-  /**
-   * @var string
-   */
-  public $authToken = null;
+  public $oauthInfo = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'xiaomiAppId',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'appUserAuthProvider',
-          'type' => TType::I32,
-          ),
-        3 => array(
-          'var' => 'authToken',
-          'type' => TType::STRING,
+          'var' => 'oauthInfo',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Auth\OAuthInfo',
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['xiaomiAppId'])) {
-        $this->xiaomiAppId = $vals['xiaomiAppId'];
-      }
-      if (isset($vals['appUserAuthProvider'])) {
-        $this->appUserAuthProvider = $vals['appUserAuthProvider'];
-      }
-      if (isset($vals['authToken'])) {
-        $this->authToken = $vals['authToken'];
+      if (isset($vals['oauthInfo'])) {
+        $this->oauthInfo = $vals['oauthInfo'];
       }
     }
   }
@@ -164,22 +139,9 @@ class AuthService_createCredential_args {
       switch ($fid)
       {
         case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->xiaomiAppId);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->appUserAuthProvider);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->authToken);
+          if ($ftype == TType::STRUCT) {
+            $this->oauthInfo = new \SDS\Auth\OAuthInfo();
+            $xfer += $this->oauthInfo->read($input);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -197,19 +159,12 @@ class AuthService_createCredential_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AuthService_createCredential_args');
-    if ($this->xiaomiAppId !== null) {
-      $xfer += $output->writeFieldBegin('xiaomiAppId', TType::STRING, 1);
-      $xfer += $output->writeString($this->xiaomiAppId);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->appUserAuthProvider !== null) {
-      $xfer += $output->writeFieldBegin('appUserAuthProvider', TType::I32, 2);
-      $xfer += $output->writeI32($this->appUserAuthProvider);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->authToken !== null) {
-      $xfer += $output->writeFieldBegin('authToken', TType::STRING, 3);
-      $xfer += $output->writeString($this->authToken);
+    if ($this->oauthInfo !== null) {
+      if (!is_object($this->oauthInfo)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('oauthInfo', TType::STRUCT, 1);
+      $xfer += $this->oauthInfo->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
