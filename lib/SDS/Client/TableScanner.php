@@ -109,16 +109,19 @@ class RecordIterator implements \Iterator
             usleep($this->baseWaitTime_ << ($this->retryTime_ - 1));
         }
         $result = $this->tableClient_->scan($this->scanRequest_);
-        if (empty($result->nextStartKey)) {
+        if (empty($result->nextStartKey) && $result->nextSplitIndex == -1) {
           $this->finished_ = true;
         } else {
-           if (count($result->records) == $this->scanRequest_->limit) {
-               $this->retryTime_ = 0;
-           } else {
+           if (count($result->records) < $this->scanRequest_->limit && $result->throttled) {
                $this->retryTime_++;
+           } else {
+               $this->retryTime_ = 0;
            }
         }
         $this->scanRequest_->startKey = $result->nextStartKey;
+        if ($result->nextSplitIndex > 0) {
+            $this->scanRequest_->splitIndex = $result->nextSplitIndex;
+        }
         $this->iter_ = new \ArrayIterator($result->records);
         $this->iter_->rewind();
       }
