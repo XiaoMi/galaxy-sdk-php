@@ -68,13 +68,6 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    */
   public function dropTable($tableName);
   /**
-   * 延迟删除表
-   * 
-   * @param string $tableName
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function lazyDropTable($tableName);
-  /**
    * 修改表
    * 
    * @param string $tableName
@@ -236,7 +229,6 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @param int $startDate
    * @param int $stopDate
    * @return array
-   * @throws \SDS\Errors\ServiceException
    */
   public function getTableHistorySize($tableName, $startDate, $stopDate);
 }
@@ -554,57 +546,6 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
         throw $x;
       }
       $result = new \SDS\Admin\AdminService_dropTable_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    return;
-  }
-
-  public function lazyDropTable($tableName)
-  {
-    $this->send_lazyDropTable($tableName);
-    $this->recv_lazyDropTable();
-  }
-
-  public function send_lazyDropTable($tableName)
-  {
-    $args = new \SDS\Admin\AdminService_lazyDropTable_args();
-    $args->tableName = $tableName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'lazyDropTable', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('lazyDropTable', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_lazyDropTable()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_lazyDropTable_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_lazyDropTable_result();
       $result->read($this->input_);
       $this->input_->readMessageEnd();
     }
@@ -1671,9 +1612,6 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     if ($result->success !== null) {
       return $result->success;
     }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
     throw new \Exception("getTableHistorySize failed: unknown result");
   }
 
@@ -2722,158 +2660,6 @@ class AdminService_dropTable_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_dropTable_result');
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_lazyDropTable_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_lazyDropTable_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_lazyDropTable_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_lazyDropTable_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_lazyDropTable_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_lazyDropTable_result');
     if ($this->se !== null) {
       $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
       $xfer += $this->se->write($output);
@@ -6580,10 +6366,6 @@ class AdminService_getTableHistorySize_result {
    * @var array
    */
   public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -6600,19 +6382,11 @@ class AdminService_getTableHistorySize_result {
             'type' => TType::I64,
             ),
           ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['success'])) {
         $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
       }
     }
   }
@@ -6656,14 +6430,6 @@ class AdminService_getTableHistorySize_result {
             $xfer += $input->skip($ftype);
           }
           break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -6693,11 +6459,6 @@ class AdminService_getTableHistorySize_result {
         }
         $output->writeMapEnd();
       }
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
