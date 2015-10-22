@@ -9,7 +9,7 @@ use Thread;
 
 class MetricsUploaderThread extends Thread
 {
-  const UPLOAD_INTERVAL = 60;
+  const UPLOAD_INTERVAL = 10;
 
   public function __construct($adminServiceClient, $metricsQueue)
   {

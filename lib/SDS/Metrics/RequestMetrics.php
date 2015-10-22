@@ -48,7 +48,7 @@ class RequestMetrics
             $value->getStartTimeMilli();
         $metricData->timeStamp = round($value->getEndTimeMilli() / 1000);
       }
-      $clientMetrics->metricDataList = $metricData;
+      $clientMetrics->metricDataList[] = $metricData;
     }
 
     return $clientMetrics;
