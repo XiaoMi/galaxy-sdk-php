@@ -22,16 +22,22 @@ class ExactLimitScanner {
         usleep($baseWaitTime << ($retryTime - 1));
       }
       $result = $tableClient->scan($scanRequest);
-      if (empty($result->nextStartKey)) {
+      if (empty($result->nextStartKey) && $result->nextSplitIndex == -1) {
         $finished = true;
       } else {
         $limit = $limit - count($result->records);
         if ($limit <= 0) {
           $finished = true;
         } else {
-          $retryTime++;
+          if ($result->throttled) {
+            $retryTime++;
+          } else {
+            $retryTime = 0;
+          }
           $scanRequest->limit = $limit;
-          $scanRequest->startKey = $result->nextStartKey;
+          if ($result->nextSplitIndex > 0) {
+            $scanRequest->splitIndex = $result->nextSplitIndex;
+          }
         }
       }
       foreach ($result->records as $record) {

@@ -2102,13 +2102,13 @@ class TableMetadata {
    * 
    * @var bool
    */
-  public $enableReplication = false;
+  public $enableReplication = null;
   /**
    * 是否支持全局有序扫描
    * 
    * @var bool
    */
-  public $enableScanInGlobalOrder = false;
+  public $enableScanInGlobalOrder = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
