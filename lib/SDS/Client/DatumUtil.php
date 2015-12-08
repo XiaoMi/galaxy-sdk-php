@@ -20,7 +20,7 @@ class DatumUtil
    * @return Datum
    * @throws \Exception in case of unsupported data type
    */
-  public static function datum($value, $type = null, $protocol = ThriftProtocol::TBINARY)
+  public static function datum($value, $type = null, $protocol = ThriftProtocol::TBINARYACCELERATED)
   {
     if (is_null($value)) {
       throw new \Exception("Datum must not be null");
@@ -28,6 +28,7 @@ class DatumUtil
 
     if ($protocol != ThriftProtocol::TCOMPACT &&
         $protocol != ThriftProtocol::TBINARY &&
+        $protocol != ThriftProtocol::TBINARYACCELERATED &&
         $protocol != ThriftProtocol::TJSON) {
       throw new \Exception("Unknown thrift protocol type");
     }
@@ -78,6 +79,7 @@ class DatumUtil
         break;
       case DataType::BINARY:
         if ($protocol === ThriftProtocol::TBINARY ||
+            $protocol === ThriftProtocol::TBINARYACCELERATED ||
             $protocol === ThriftProtocol::TCOMPACT) {
           $val = new Value(array("binaryValue" => $value));
         } else {
@@ -117,7 +119,7 @@ class DatumUtil
    * @return mixed
    * @throws \Exception in case of unsupported data type
    */
-  public static function value($datum, $protocol = ThriftProtocol::TBINARY)
+  public static function value($datum, $protocol = ThriftProtocol::TBINARYACCELERATED)
   {
     if (is_null($datum)) {
       return null;
@@ -125,6 +127,7 @@ class DatumUtil
 
     if ($protocol != ThriftProtocol::TCOMPACT &&
         $protocol != ThriftProtocol::TBINARY &&
+        $protocol != ThriftProtocol::TBINARYACCELERATED &&
         $protocol != ThriftProtocol::TJSON) {
       throw new \Exception("Unknown thrift protocol type");
     }
@@ -138,6 +141,7 @@ class DatumUtil
         return $datum->value->stringValue;
       case DataType::BINARY:
         if ($protocol === ThriftProtocol::TBINARY ||
+            $protocol === ThriftProtocol::TBINARYACCELERATED ||
             $protocol === ThriftProtocol::TCOMPACT) {
           return $datum->value->binaryValue;
         } else {
@@ -177,7 +181,7 @@ class DatumUtil
    * @param $data array of datum
    * @return array array of values
    */
-  public static function values($data, $protocol = ThriftProtocol::TBINARY) {
+  public static function values($data, $protocol = ThriftProtocol::TBINARYACCELERATED) {
     $values = array();
     foreach ($data as $field => $datum) {
       $values[$field] = DatumUtil::value($datum, $protocol);

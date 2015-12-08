@@ -33,10 +33,15 @@ final class ThriftProtocol {
    * TBINARYProtocol
    */
   const TBINARY = 2;
+  /**
+   * TBINARYProtocolAccelerated, 优化PHP/Python客户端thrift序列化性能
+   */
+  const TBINARYACCELERATED = 3;
   static public $__names = array(
     0 => 'TCOMPACT',
     1 => 'TJSON',
     2 => 'TBINARY',
+    3 => 'TBINARYACCELERATED',
   );
 }
 
@@ -63,7 +68,7 @@ class Version {
    * 
    * @var string
    */
-  public $patch = "f517e5c6";
+  public $patch = "57f4ea8f";
   /**
    * 附加信息
    * 
@@ -214,9 +219,10 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $THRIFT_JSON_PROTOCOL_CLASS;
   static protected $THRIFT_BINARY_PROTOCOL_CLASS;
   static protected $THRIFT_COMPACT_PROTOCOL_CLASS;
+  static protected $THRIFT_BINARY_PROTOCOL_ACCELERATED_CLASS;
   static protected $THRIFT_HEADER_MAP;
-  static protected $THRIFT_PROTOCOL_MAP;
   static protected $HEADER_THRIFT_MAP;
+  static protected $THRIFT_PROTOCOL_MAP;
   static protected $HK_REQUEST_TIMEOUT;
   static protected $HK_ERROR_CODE_HEADER;
   static protected $MAX_CONTENT_SIZE;
@@ -329,19 +335,16 @@ final class Constant extends \Thrift\Type\TConstant {
     return "TCompactProtocol";
   }
 
+  static protected function init_THRIFT_BINARY_PROTOCOL_ACCELERATED_CLASS() {
+    return "TBinaryProtocolAccelerated";
+  }
+
   static protected function init_THRIFT_HEADER_MAP() {
     return array(
             0 => "application/x-thrift-compact",
             1 => "application/x-thrift-json",
             2 => "application/x-thrift-binary",
-    );
-  }
-
-  static protected function init_THRIFT_PROTOCOL_MAP() {
-    return array(
-            0 => "TCompactProtocol",
-            1 => "TJSONProtocol",
-            2 => "TBinaryProtocol",
+            3 => "application/x-thrift-binary",
     );
   }
 
@@ -351,6 +354,15 @@ final class Constant extends \Thrift\Type\TConstant {
       "application/x-thrift-json" =>       1,
       "application/x-thrift-binary" =>       2,
       "application/x-thrift" =>       1,
+    );
+  }
+
+  static protected function init_THRIFT_PROTOCOL_MAP() {
+    return array(
+            0 => "TCompactProtocol",
+            1 => "TJSONProtocol",
+            2 => "TBinaryProtocol",
+            3 => "TBinaryProtocolAccelerated",
     );
   }
 

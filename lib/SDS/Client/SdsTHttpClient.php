@@ -103,7 +103,7 @@ class SdsTHttpClient extends THttpClient
    * @param string $url
    * @param bool $verbose
    */
-  public function __construct($credential, $url, $timeout, $connTimeout, $protocol = ThriftProtocol::TBINARY,
+  public function __construct($credential, $url, $timeout, $connTimeout, $protocol = ThriftProtocol::TBINARYACCELERATED,
                               $retryIfOperationTimeout = false, $verbose = false)
   {
     $parts = parse_url($url);

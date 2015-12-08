@@ -38,7 +38,7 @@ class ClientFactory
    */
   public function __construct($credential, $retryIfOperationTimeout = false,
                               $verbose = false, $isMetricEnabled = false,
-                              $protocol = ThriftProtocol::TBINARY
+                              $protocol = ThriftProtocol::TBINARYACCELERATED
   )
   {
     $this->credential_ = $credential;
