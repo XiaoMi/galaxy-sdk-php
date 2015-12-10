@@ -1180,4 +1180,425 @@ class TimeSeriesData {
 
 }
 
+/**
+ * 表快照
+ */
+class Snapshot {
+  static $_TSPEC;
+
+  /**
+   * 快照名
+   * 
+   * @var string
+   */
+  public $snapshotName = null;
+  /**
+   * 快照状态
+   * 
+   * @var int
+   */
+  public $snapshotState = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'snapshotName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'snapshotState',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['snapshotName'])) {
+        $this->snapshotName = $vals['snapshotName'];
+      }
+      if (isset($vals['snapshotState'])) {
+        $this->snapshotState = $vals['snapshotState'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Snapshot';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->snapshotName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->snapshotState);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Snapshot');
+    if ($this->snapshotName !== null) {
+      $xfer += $output->writeFieldBegin('snapshotName', TType::STRING, 1);
+      $xfer += $output->writeString($this->snapshotName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->snapshotState !== null) {
+      $xfer += $output->writeFieldBegin('snapshotState', TType::I32, 2);
+      $xfer += $output->writeI32($this->snapshotState);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 表的所有快照
+ */
+class TableSnapshots {
+  static $_TSPEC;
+
+  /**
+   * 表名
+   * 
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * 系统自动生成的快照
+   * 
+   * @var \SDS\Admin\Snapshot[]
+   */
+  public $sysSnapshots = null;
+  /**
+   * 用户生成的快照
+   * 
+   * @var \SDS\Admin\Snapshot[]
+   */
+  public $userSnapshots = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'sysSnapshots',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Admin\Snapshot',
+            ),
+          ),
+        3 => array(
+          'var' => 'userSnapshots',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Admin\Snapshot',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['sysSnapshots'])) {
+        $this->sysSnapshots = $vals['sysSnapshots'];
+      }
+      if (isset($vals['userSnapshots'])) {
+        $this->userSnapshots = $vals['userSnapshots'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'TableSnapshots';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::LST) {
+            $this->sysSnapshots = array();
+            $_size34 = 0;
+            $_etype37 = 0;
+            $xfer += $input->readListBegin($_etype37, $_size34);
+            for ($_i38 = 0; $_i38 < $_size34; ++$_i38)
+            {
+              $elem39 = null;
+              $elem39 = new \SDS\Admin\Snapshot();
+              $xfer += $elem39->read($input);
+              $this->sysSnapshots []= $elem39;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::LST) {
+            $this->userSnapshots = array();
+            $_size40 = 0;
+            $_etype43 = 0;
+            $xfer += $input->readListBegin($_etype43, $_size40);
+            for ($_i44 = 0; $_i44 < $_size40; ++$_i44)
+            {
+              $elem45 = null;
+              $elem45 = new \SDS\Admin\Snapshot();
+              $xfer += $elem45->read($input);
+              $this->userSnapshots []= $elem45;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('TableSnapshots');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->sysSnapshots !== null) {
+      if (!is_array($this->sysSnapshots)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('sysSnapshots', TType::LST, 2);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->sysSnapshots));
+        {
+          foreach ($this->sysSnapshots as $iter46)
+          {
+            $xfer += $iter46->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->userSnapshots !== null) {
+      if (!is_array($this->userSnapshots)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('userSnapshots', TType::LST, 3);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->userSnapshots));
+        {
+          foreach ($this->userSnapshots as $iter47)
+          {
+            $xfer += $iter47->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 存在快照的表视图
+ */
+class SnapshotTableView {
+  static $_TSPEC;
+
+  /**
+   * 表名
+   * 
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * 表是否存在
+   * 
+   * @var bool
+   */
+  public $tableExist = null;
+  /**
+   * 表的删除时间
+   * 
+   * @var int
+   */
+  public $deleteTime = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'tableExist',
+          'type' => TType::BOOL,
+          ),
+        3 => array(
+          'var' => 'deleteTime',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['tableExist'])) {
+        $this->tableExist = $vals['tableExist'];
+      }
+      if (isset($vals['deleteTime'])) {
+        $this->deleteTime = $vals['deleteTime'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'SnapshotTableView';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->tableExist);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->deleteTime);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('SnapshotTableView');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->tableExist !== null) {
+      $xfer += $output->writeFieldBegin('tableExist', TType::BOOL, 2);
+      $xfer += $output->writeBool($this->tableExist);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deleteTime !== null) {
+      $xfer += $output->writeFieldBegin('deleteTime', TType::I64, 3);
+      $xfer += $output->writeI64($this->deleteTime);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 

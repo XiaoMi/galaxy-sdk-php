@@ -271,6 +271,10 @@ final class TableState {
    * 延迟删除, 可见
    */
   const LAZY_DELETE = 8;
+  /**
+   * 正在重命名，不可操作
+   */
+  const RENAMING = 9;
   static public $__names = array(
     1 => 'CREATING',
     2 => 'ENABLING',
@@ -280,6 +284,25 @@ final class TableState {
     6 => 'DELETING',
     7 => 'DELETED',
     8 => 'LAZY_DELETE',
+    9 => 'RENAMING',
+  );
+}
+
+/**
+ * 快照状态
+ */
+final class SnapshotState {
+  /**
+   * 开启状态，可操作
+   */
+  const ENABLED = 1;
+  /**
+   * 正在创建，不可操作
+   */
+  const INPROGRESS = 2;
+  static public $__names = array(
+    1 => 'ENABLED',
+    2 => 'INPROGRESS',
   );
 }
 
@@ -2098,17 +2121,23 @@ class TableMetadata {
    */
   public $description = null;
   /**
-   * 是否做增量复制
-   * 
-   * @var bool
-   */
-  public $enableReplication = null;
-  /**
    * 是否支持全局有序扫描
    * 
    * @var bool
    */
   public $enableScanInGlobalOrder = null;
+  /**
+   * 远程复制定义
+   * 
+   * @var \SDS\Table\ReplicationSpec
+   */
+  public $replication = null;
+  /**
+   * 是否支持系统定期做snapshot， 默认为true
+   * 
+   * @var bool
+   */
+  public $enableSysSnapshot = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -2152,11 +2181,16 @@ class TableMetadata {
           'type' => TType::STRING,
           ),
         7 => array(
-          'var' => 'enableReplication',
+          'var' => 'enableScanInGlobalOrder',
           'type' => TType::BOOL,
           ),
         8 => array(
-          'var' => 'enableScanInGlobalOrder',
+          'var' => 'replication',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\ReplicationSpec',
+          ),
+        9 => array(
+          'var' => 'enableSysSnapshot',
           'type' => TType::BOOL,
           ),
         );
@@ -2180,11 +2214,14 @@ class TableMetadata {
       if (isset($vals['description'])) {
         $this->description = $vals['description'];
       }
-      if (isset($vals['enableReplication'])) {
-        $this->enableReplication = $vals['enableReplication'];
-      }
       if (isset($vals['enableScanInGlobalOrder'])) {
         $this->enableScanInGlobalOrder = $vals['enableScanInGlobalOrder'];
+      }
+      if (isset($vals['replication'])) {
+        $this->replication = $vals['replication'];
+      }
+      if (isset($vals['enableSysSnapshot'])) {
+        $this->enableSysSnapshot = $vals['enableSysSnapshot'];
       }
     }
   }
@@ -2277,14 +2314,22 @@ class TableMetadata {
           break;
         case 7:
           if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->enableReplication);
+            $xfer += $input->readBool($this->enableScanInGlobalOrder);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 8:
+          if ($ftype == TType::STRUCT) {
+            $this->replication = new \SDS\Table\ReplicationSpec();
+            $xfer += $this->replication->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 9:
           if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->enableScanInGlobalOrder);
+            $xfer += $input->readBool($this->enableSysSnapshot);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -2360,14 +2405,22 @@ class TableMetadata {
       $xfer += $output->writeString($this->description);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->enableReplication !== null) {
-      $xfer += $output->writeFieldBegin('enableReplication', TType::BOOL, 7);
-      $xfer += $output->writeBool($this->enableReplication);
+    if ($this->enableScanInGlobalOrder !== null) {
+      $xfer += $output->writeFieldBegin('enableScanInGlobalOrder', TType::BOOL, 7);
+      $xfer += $output->writeBool($this->enableScanInGlobalOrder);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->enableScanInGlobalOrder !== null) {
-      $xfer += $output->writeFieldBegin('enableScanInGlobalOrder', TType::BOOL, 8);
-      $xfer += $output->writeBool($this->enableScanInGlobalOrder);
+    if ($this->replication !== null) {
+      if (!is_object($this->replication)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('replication', TType::STRUCT, 8);
+      $xfer += $this->replication->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->enableSysSnapshot !== null) {
+      $xfer += $output->writeFieldBegin('enableSysSnapshot', TType::BOOL, 9);
+      $xfer += $output->writeBool($this->enableSysSnapshot);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -2479,6 +2532,521 @@ class TableSpec {
       }
       $xfer += $output->writeFieldBegin('metadata', TType::STRUCT, 2);
       $xfer += $this->metadata->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 远程复制吞吐量配额
+ */
+class ReplicationProvisionThroughput {
+  static $_TSPEC;
+
+  /**
+   * @var int
+   */
+  public $consumeCapacity = null;
+  /**
+   * @var int
+   */
+  public $commitCapacity = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'consumeCapacity',
+          'type' => TType::I64,
+          ),
+        2 => array(
+          'var' => 'commitCapacity',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['consumeCapacity'])) {
+        $this->consumeCapacity = $vals['consumeCapacity'];
+      }
+      if (isset($vals['commitCapacity'])) {
+        $this->commitCapacity = $vals['commitCapacity'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ReplicationProvisionThroughput';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->consumeCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->commitCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ReplicationProvisionThroughput');
+    if ($this->consumeCapacity !== null) {
+      $xfer += $output->writeFieldBegin('consumeCapacity', TType::I64, 1);
+      $xfer += $output->writeI64($this->consumeCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->commitCapacity !== null) {
+      $xfer += $output->writeFieldBegin('commitCapacity', TType::I64, 2);
+      $xfer += $output->writeI64($this->commitCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 远程复制定义
+ */
+class ReplicationSpec {
+  static $_TSPEC;
+
+  /**
+   * 是否做增量复制
+   * 
+   * @var bool
+   */
+  public $enableReplication = null;
+  /**
+   * 吞吐量配额
+   * 
+   * @var \SDS\Table\ReplicationProvisionThroughput
+   */
+  public $throughput = null;
+  /**
+   * 订阅者的最大数量
+   * 
+   * @var int
+   */
+  public $maxSubscribers = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'enableReplication',
+          'type' => TType::BOOL,
+          ),
+        2 => array(
+          'var' => 'throughput',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\ReplicationProvisionThroughput',
+          ),
+        3 => array(
+          'var' => 'maxSubscribers',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['enableReplication'])) {
+        $this->enableReplication = $vals['enableReplication'];
+      }
+      if (isset($vals['throughput'])) {
+        $this->throughput = $vals['throughput'];
+      }
+      if (isset($vals['maxSubscribers'])) {
+        $this->maxSubscribers = $vals['maxSubscribers'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ReplicationSpec';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enableReplication);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->throughput = new \SDS\Table\ReplicationProvisionThroughput();
+            $xfer += $this->throughput->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->maxSubscribers);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ReplicationSpec');
+    if ($this->enableReplication !== null) {
+      $xfer += $output->writeFieldBegin('enableReplication', TType::BOOL, 1);
+      $xfer += $output->writeBool($this->enableReplication);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->throughput !== null) {
+      if (!is_object($this->throughput)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('throughput', TType::STRUCT, 2);
+      $xfer += $this->throughput->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->maxSubscribers !== null) {
+      $xfer += $output->writeFieldBegin('maxSubscribers', TType::I32, 3);
+      $xfer += $output->writeI32($this->maxSubscribers);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class Subscriber {
+  static $_TSPEC;
+
+  /**
+   * 表名
+   * 
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * 订阅者名字
+   * 
+   * @var string
+   */
+  public $subscriberName = null;
+  /**
+   * 订阅者ID,仅作为输出值，作为输入时无需指定
+   * 
+   * @var string
+   */
+  public $subscriberId = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'subscriberName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'subscriberId',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['subscriberName'])) {
+        $this->subscriberName = $vals['subscriberName'];
+      }
+      if (isset($vals['subscriberId'])) {
+        $this->subscriberId = $vals['subscriberId'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Subscriber';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->subscriberName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->subscriberId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Subscriber');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->subscriberName !== null) {
+      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 2);
+      $xfer += $output->writeString($this->subscriberName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->subscriberId !== null) {
+      $xfer += $output->writeFieldBegin('subscriberId', TType::STRING, 3);
+      $xfer += $output->writeString($this->subscriberId);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class Sinker {
+  static $_TSPEC;
+
+  /**
+   * 主集群订阅的表名
+   * 
+   * @var string
+   */
+  public $subscribedTableName = null;
+  /**
+   * 订阅者名字
+   * 
+   * @var string
+   */
+  public $subscriberName = null;
+  /**
+   * 主集群域名
+   * 
+   * @var string
+   */
+  public $endpoint = null;
+  /**
+   * 备集群的表名
+   * 
+   * @var string
+   */
+  public $sinkedTableName = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'subscribedTableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'subscriberName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'endpoint',
+          'type' => TType::STRING,
+          ),
+        4 => array(
+          'var' => 'sinkedTableName',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['subscribedTableName'])) {
+        $this->subscribedTableName = $vals['subscribedTableName'];
+      }
+      if (isset($vals['subscriberName'])) {
+        $this->subscriberName = $vals['subscriberName'];
+      }
+      if (isset($vals['endpoint'])) {
+        $this->endpoint = $vals['endpoint'];
+      }
+      if (isset($vals['sinkedTableName'])) {
+        $this->sinkedTableName = $vals['sinkedTableName'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Sinker';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->subscribedTableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->subscriberName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->endpoint);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->sinkedTableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Sinker');
+    if ($this->subscribedTableName !== null) {
+      $xfer += $output->writeFieldBegin('subscribedTableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->subscribedTableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->subscriberName !== null) {
+      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 2);
+      $xfer += $output->writeString($this->subscriberName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->endpoint !== null) {
+      $xfer += $output->writeFieldBegin('endpoint', TType::STRING, 3);
+      $xfer += $output->writeString($this->endpoint);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->sinkedTableName !== null) {
+      $xfer += $output->writeFieldBegin('sinkedTableName', TType::STRING, 4);
+      $xfer += $output->writeString($this->sinkedTableName);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -3153,23 +3721,207 @@ class TableSplit {
 }
 
 /**
- * 表分片信息
+ * 表分区信息，包括分区id，起始和结束的row key
  */
-class PartitionInfo {
+class Partition {
   static $_TSPEC;
 
   /**
    * @var int
    */
-  public $putRequestNumber = null;
+  public $partitionId = null;
   /**
-   * @var int
+   * @var array
    */
-  public $deleteRequestNumber = null;
+  public $startKey = null;
   /**
-   * @var int
+   * @var array
    */
-  public $incrementRequestNumber = null;
+  public $stopKey = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'startKey',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Table\Datum',
+            ),
+          ),
+        3 => array(
+          'var' => 'stopKey',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Table\Datum',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+      if (isset($vals['startKey'])) {
+        $this->startKey = $vals['startKey'];
+      }
+      if (isset($vals['stopKey'])) {
+        $this->stopKey = $vals['stopKey'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Partition';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::MAP) {
+            $this->startKey = array();
+            $_size136 = 0;
+            $_ktype137 = 0;
+            $_vtype138 = 0;
+            $xfer += $input->readMapBegin($_ktype137, $_vtype138, $_size136);
+            for ($_i140 = 0; $_i140 < $_size136; ++$_i140)
+            {
+              $key141 = '';
+              $val142 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key141);
+              $val142 = new \SDS\Table\Datum();
+              $xfer += $val142->read($input);
+              $this->startKey[$key141] = $val142;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::MAP) {
+            $this->stopKey = array();
+            $_size143 = 0;
+            $_ktype144 = 0;
+            $_vtype145 = 0;
+            $xfer += $input->readMapBegin($_ktype144, $_vtype145, $_size143);
+            for ($_i147 = 0; $_i147 < $_size143; ++$_i147)
+            {
+              $key148 = '';
+              $val149 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key148);
+              $val149 = new \SDS\Table\Datum();
+              $xfer += $val149->read($input);
+              $this->stopKey[$key148] = $val149;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Partition');
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->startKey !== null) {
+      if (!is_array($this->startKey)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('startKey', TType::MAP, 2);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->startKey));
+        {
+          foreach ($this->startKey as $kiter150 => $viter151)
+          {
+            $xfer += $output->writeString($kiter150);
+            $xfer += $viter151->write($output);
+          }
+        }
+        $output->writeMapEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->stopKey !== null) {
+      if (!is_array($this->stopKey)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('stopKey', TType::MAP, 3);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->stopKey));
+        {
+          foreach ($this->stopKey as $kiter152 => $viter153)
+          {
+            $xfer += $output->writeString($kiter152);
+            $xfer += $viter153->write($output);
+          }
+        }
+        $output->writeMapEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 表分区统计信息
+ */
+class PartitionStatistics {
+  static $_TSPEC;
+
   /**
    * @var int
    */
@@ -3178,75 +3930,32 @@ class PartitionInfo {
    * @var int
    */
   public $retrievedEditNumber = null;
-  /**
-   * @var int
-   */
-  public $fullScanNumber = null;
-  /**
-   * @var int
-   */
-  public $compactionNumber = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'putRequestNumber',
-          'type' => TType::I64,
-          ),
-        2 => array(
-          'var' => 'deleteRequestNumber',
-          'type' => TType::I64,
-          ),
-        3 => array(
-          'var' => 'incrementRequestNumber',
-          'type' => TType::I64,
-          ),
-        4 => array(
           'var' => 'collectedEditNumber',
           'type' => TType::I64,
           ),
-        5 => array(
+        2 => array(
           'var' => 'retrievedEditNumber',
-          'type' => TType::I64,
-          ),
-        6 => array(
-          'var' => 'fullScanNumber',
-          'type' => TType::I64,
-          ),
-        7 => array(
-          'var' => 'compactionNumber',
           'type' => TType::I64,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['putRequestNumber'])) {
-        $this->putRequestNumber = $vals['putRequestNumber'];
-      }
-      if (isset($vals['deleteRequestNumber'])) {
-        $this->deleteRequestNumber = $vals['deleteRequestNumber'];
-      }
-      if (isset($vals['incrementRequestNumber'])) {
-        $this->incrementRequestNumber = $vals['incrementRequestNumber'];
-      }
       if (isset($vals['collectedEditNumber'])) {
         $this->collectedEditNumber = $vals['collectedEditNumber'];
       }
       if (isset($vals['retrievedEditNumber'])) {
         $this->retrievedEditNumber = $vals['retrievedEditNumber'];
       }
-      if (isset($vals['fullScanNumber'])) {
-        $this->fullScanNumber = $vals['fullScanNumber'];
-      }
-      if (isset($vals['compactionNumber'])) {
-        $this->compactionNumber = $vals['compactionNumber'];
-      }
     }
   }
 
   public function getName() {
-    return 'PartitionInfo';
+    return 'PartitionStatistics';
   }
 
   public function read($input)
@@ -3266,49 +3975,14 @@ class PartitionInfo {
       {
         case 1:
           if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->putRequestNumber);
+            $xfer += $input->readI64($this->collectedEditNumber);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
           if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->deleteRequestNumber);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->incrementRequestNumber);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 4:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->collectedEditNumber);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 5:
-          if ($ftype == TType::I64) {
             $xfer += $input->readI64($this->retrievedEditNumber);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 6:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->fullScanNumber);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 7:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->compactionNumber);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -3325,40 +3999,15 @@ class PartitionInfo {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('PartitionInfo');
-    if ($this->putRequestNumber !== null) {
-      $xfer += $output->writeFieldBegin('putRequestNumber', TType::I64, 1);
-      $xfer += $output->writeI64($this->putRequestNumber);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->deleteRequestNumber !== null) {
-      $xfer += $output->writeFieldBegin('deleteRequestNumber', TType::I64, 2);
-      $xfer += $output->writeI64($this->deleteRequestNumber);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->incrementRequestNumber !== null) {
-      $xfer += $output->writeFieldBegin('incrementRequestNumber', TType::I64, 3);
-      $xfer += $output->writeI64($this->incrementRequestNumber);
-      $xfer += $output->writeFieldEnd();
-    }
+    $xfer += $output->writeStructBegin('PartitionStatistics');
     if ($this->collectedEditNumber !== null) {
-      $xfer += $output->writeFieldBegin('collectedEditNumber', TType::I64, 4);
+      $xfer += $output->writeFieldBegin('collectedEditNumber', TType::I64, 1);
       $xfer += $output->writeI64($this->collectedEditNumber);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->retrievedEditNumber !== null) {
-      $xfer += $output->writeFieldBegin('retrievedEditNumber', TType::I64, 5);
+      $xfer += $output->writeFieldBegin('retrievedEditNumber', TType::I64, 2);
       $xfer += $output->writeI64($this->retrievedEditNumber);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->fullScanNumber !== null) {
-      $xfer += $output->writeFieldBegin('fullScanNumber', TType::I64, 6);
-      $xfer += $output->writeI64($this->fullScanNumber);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->compactionNumber !== null) {
-      $xfer += $output->writeFieldBegin('compactionNumber', TType::I64, 7);
-      $xfer += $output->writeI64($this->compactionNumber);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -3369,9 +4018,9 @@ class PartitionInfo {
 }
 
 /**
- * 表分片订阅信息
+ * 表分区订阅统计信息
  */
-class SubscribeInfo {
+class SubscriberStatistics {
   static $_TSPEC;
 
   /**
@@ -3429,7 +4078,7 @@ class SubscribeInfo {
   }
 
   public function getName() {
-    return 'SubscribeInfo';
+    return 'SubscriberStatistics';
   }
 
   public function read($input)
@@ -3487,7 +4136,7 @@ class SubscribeInfo {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('SubscribeInfo');
+    $xfer += $output->writeStructBegin('SubscriberStatistics');
     if ($this->consumedDataNumber !== null) {
       $xfer += $output->writeFieldBegin('consumedDataNumber', TType::I64, 1);
       $xfer += $output->writeI64($this->consumedDataNumber);
@@ -3607,18 +4256,18 @@ class GetRequest {
         case 2:
           if ($ftype == TType::MAP) {
             $this->keys = array();
-            $_size136 = 0;
-            $_ktype137 = 0;
-            $_vtype138 = 0;
-            $xfer += $input->readMapBegin($_ktype137, $_vtype138, $_size136);
-            for ($_i140 = 0; $_i140 < $_size136; ++$_i140)
+            $_size154 = 0;
+            $_ktype155 = 0;
+            $_vtype156 = 0;
+            $xfer += $input->readMapBegin($_ktype155, $_vtype156, $_size154);
+            for ($_i158 = 0; $_i158 < $_size154; ++$_i158)
             {
-              $key141 = '';
-              $val142 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key141);
-              $val142 = new \SDS\Table\Datum();
-              $xfer += $val142->read($input);
-              $this->keys[$key141] = $val142;
+              $key159 = '';
+              $val160 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key159);
+              $val160 = new \SDS\Table\Datum();
+              $xfer += $val160->read($input);
+              $this->keys[$key159] = $val160;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -3628,14 +4277,14 @@ class GetRequest {
         case 3:
           if ($ftype == TType::LST) {
             $this->attributes = array();
-            $_size143 = 0;
-            $_etype146 = 0;
-            $xfer += $input->readListBegin($_etype146, $_size143);
-            for ($_i147 = 0; $_i147 < $_size143; ++$_i147)
+            $_size161 = 0;
+            $_etype164 = 0;
+            $xfer += $input->readListBegin($_etype164, $_size161);
+            for ($_i165 = 0; $_i165 < $_size161; ++$_i165)
             {
-              $elem148 = null;
-              $xfer += $input->readString($elem148);
-              $this->attributes []= $elem148;
+              $elem166 = null;
+              $xfer += $input->readString($elem166);
+              $this->attributes []= $elem166;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -3668,10 +4317,10 @@ class GetRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->keys));
         {
-          foreach ($this->keys as $kiter149 => $viter150)
+          foreach ($this->keys as $kiter167 => $viter168)
           {
-            $xfer += $output->writeString($kiter149);
-            $xfer += $viter150->write($output);
+            $xfer += $output->writeString($kiter167);
+            $xfer += $viter168->write($output);
           }
         }
         $output->writeMapEnd();
@@ -3686,9 +4335,9 @@ class GetRequest {
       {
         $output->writeListBegin(TType::STRING, count($this->attributes));
         {
-          foreach ($this->attributes as $iter151)
+          foreach ($this->attributes as $iter169)
           {
-            $xfer += $output->writeString($iter151);
+            $xfer += $output->writeString($iter169);
           }
         }
         $output->writeListEnd();
@@ -3757,18 +4406,18 @@ class GetResult {
         case 1:
           if ($ftype == TType::MAP) {
             $this->item = array();
-            $_size152 = 0;
-            $_ktype153 = 0;
-            $_vtype154 = 0;
-            $xfer += $input->readMapBegin($_ktype153, $_vtype154, $_size152);
-            for ($_i156 = 0; $_i156 < $_size152; ++$_i156)
+            $_size170 = 0;
+            $_ktype171 = 0;
+            $_vtype172 = 0;
+            $xfer += $input->readMapBegin($_ktype171, $_vtype172, $_size170);
+            for ($_i174 = 0; $_i174 < $_size170; ++$_i174)
             {
-              $key157 = '';
-              $val158 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key157);
-              $val158 = new \SDS\Table\Datum();
-              $xfer += $val158->read($input);
-              $this->item[$key157] = $val158;
+              $key175 = '';
+              $val176 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key175);
+              $val176 = new \SDS\Table\Datum();
+              $xfer += $val176->read($input);
+              $this->item[$key175] = $val176;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -3796,10 +4445,10 @@ class GetResult {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->item));
         {
-          foreach ($this->item as $kiter159 => $viter160)
+          foreach ($this->item as $kiter177 => $viter178)
           {
-            $xfer += $output->writeString($kiter159);
-            $xfer += $viter160->write($output);
+            $xfer += $output->writeString($kiter177);
+            $xfer += $viter178->write($output);
           }
         }
         $output->writeMapEnd();
@@ -3902,18 +4551,18 @@ class PutRequest {
         case 2:
           if ($ftype == TType::MAP) {
             $this->record = array();
-            $_size161 = 0;
-            $_ktype162 = 0;
-            $_vtype163 = 0;
-            $xfer += $input->readMapBegin($_ktype162, $_vtype163, $_size161);
-            for ($_i165 = 0; $_i165 < $_size161; ++$_i165)
+            $_size179 = 0;
+            $_ktype180 = 0;
+            $_vtype181 = 0;
+            $xfer += $input->readMapBegin($_ktype180, $_vtype181, $_size179);
+            for ($_i183 = 0; $_i183 < $_size179; ++$_i183)
             {
-              $key166 = '';
-              $val167 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key166);
-              $val167 = new \SDS\Table\Datum();
-              $xfer += $val167->read($input);
-              $this->record[$key166] = $val167;
+              $key184 = '';
+              $val185 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key184);
+              $val185 = new \SDS\Table\Datum();
+              $xfer += $val185->read($input);
+              $this->record[$key184] = $val185;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -3954,10 +4603,10 @@ class PutRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->record));
         {
-          foreach ($this->record as $kiter168 => $viter169)
+          foreach ($this->record as $kiter186 => $viter187)
           {
-            $xfer += $output->writeString($kiter168);
-            $xfer += $viter169->write($output);
+            $xfer += $output->writeString($kiter186);
+            $xfer += $viter187->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4153,18 +4802,18 @@ class IncrementRequest {
         case 2:
           if ($ftype == TType::MAP) {
             $this->keys = array();
-            $_size170 = 0;
-            $_ktype171 = 0;
-            $_vtype172 = 0;
-            $xfer += $input->readMapBegin($_ktype171, $_vtype172, $_size170);
-            for ($_i174 = 0; $_i174 < $_size170; ++$_i174)
+            $_size188 = 0;
+            $_ktype189 = 0;
+            $_vtype190 = 0;
+            $xfer += $input->readMapBegin($_ktype189, $_vtype190, $_size188);
+            for ($_i192 = 0; $_i192 < $_size188; ++$_i192)
             {
-              $key175 = '';
-              $val176 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key175);
-              $val176 = new \SDS\Table\Datum();
-              $xfer += $val176->read($input);
-              $this->keys[$key175] = $val176;
+              $key193 = '';
+              $val194 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key193);
+              $val194 = new \SDS\Table\Datum();
+              $xfer += $val194->read($input);
+              $this->keys[$key193] = $val194;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4174,18 +4823,18 @@ class IncrementRequest {
         case 3:
           if ($ftype == TType::MAP) {
             $this->amounts = array();
-            $_size177 = 0;
-            $_ktype178 = 0;
-            $_vtype179 = 0;
-            $xfer += $input->readMapBegin($_ktype178, $_vtype179, $_size177);
-            for ($_i181 = 0; $_i181 < $_size177; ++$_i181)
+            $_size195 = 0;
+            $_ktype196 = 0;
+            $_vtype197 = 0;
+            $xfer += $input->readMapBegin($_ktype196, $_vtype197, $_size195);
+            for ($_i199 = 0; $_i199 < $_size195; ++$_i199)
             {
-              $key182 = '';
-              $val183 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key182);
-              $val183 = new \SDS\Table\Datum();
-              $xfer += $val183->read($input);
-              $this->amounts[$key182] = $val183;
+              $key200 = '';
+              $val201 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key200);
+              $val201 = new \SDS\Table\Datum();
+              $xfer += $val201->read($input);
+              $this->amounts[$key200] = $val201;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4218,10 +4867,10 @@ class IncrementRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->keys));
         {
-          foreach ($this->keys as $kiter184 => $viter185)
+          foreach ($this->keys as $kiter202 => $viter203)
           {
-            $xfer += $output->writeString($kiter184);
-            $xfer += $viter185->write($output);
+            $xfer += $output->writeString($kiter202);
+            $xfer += $viter203->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4236,10 +4885,10 @@ class IncrementRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->amounts));
         {
-          foreach ($this->amounts as $kiter186 => $viter187)
+          foreach ($this->amounts as $kiter204 => $viter205)
           {
-            $xfer += $output->writeString($kiter186);
-            $xfer += $viter187->write($output);
+            $xfer += $output->writeString($kiter204);
+            $xfer += $viter205->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4308,18 +4957,18 @@ class IncrementResult {
         case 1:
           if ($ftype == TType::MAP) {
             $this->amounts = array();
-            $_size188 = 0;
-            $_ktype189 = 0;
-            $_vtype190 = 0;
-            $xfer += $input->readMapBegin($_ktype189, $_vtype190, $_size188);
-            for ($_i192 = 0; $_i192 < $_size188; ++$_i192)
+            $_size206 = 0;
+            $_ktype207 = 0;
+            $_vtype208 = 0;
+            $xfer += $input->readMapBegin($_ktype207, $_vtype208, $_size206);
+            for ($_i210 = 0; $_i210 < $_size206; ++$_i210)
             {
-              $key193 = '';
-              $val194 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key193);
-              $val194 = new \SDS\Table\Datum();
-              $xfer += $val194->read($input);
-              $this->amounts[$key193] = $val194;
+              $key211 = '';
+              $val212 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key211);
+              $val212 = new \SDS\Table\Datum();
+              $xfer += $val212->read($input);
+              $this->amounts[$key211] = $val212;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4347,10 +4996,10 @@ class IncrementResult {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->amounts));
         {
-          foreach ($this->amounts as $kiter195 => $viter196)
+          foreach ($this->amounts as $kiter213 => $viter214)
           {
-            $xfer += $output->writeString($kiter195);
-            $xfer += $viter196->write($output);
+            $xfer += $output->writeString($kiter213);
+            $xfer += $viter214->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4471,18 +5120,18 @@ class RemoveRequest {
         case 2:
           if ($ftype == TType::MAP) {
             $this->keys = array();
-            $_size197 = 0;
-            $_ktype198 = 0;
-            $_vtype199 = 0;
-            $xfer += $input->readMapBegin($_ktype198, $_vtype199, $_size197);
-            for ($_i201 = 0; $_i201 < $_size197; ++$_i201)
+            $_size215 = 0;
+            $_ktype216 = 0;
+            $_vtype217 = 0;
+            $xfer += $input->readMapBegin($_ktype216, $_vtype217, $_size215);
+            for ($_i219 = 0; $_i219 < $_size215; ++$_i219)
             {
-              $key202 = '';
-              $val203 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key202);
-              $val203 = new \SDS\Table\Datum();
-              $xfer += $val203->read($input);
-              $this->keys[$key202] = $val203;
+              $key220 = '';
+              $val221 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key220);
+              $val221 = new \SDS\Table\Datum();
+              $xfer += $val221->read($input);
+              $this->keys[$key220] = $val221;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4492,14 +5141,14 @@ class RemoveRequest {
         case 3:
           if ($ftype == TType::LST) {
             $this->attributes = array();
-            $_size204 = 0;
-            $_etype207 = 0;
-            $xfer += $input->readListBegin($_etype207, $_size204);
-            for ($_i208 = 0; $_i208 < $_size204; ++$_i208)
+            $_size222 = 0;
+            $_etype225 = 0;
+            $xfer += $input->readListBegin($_etype225, $_size222);
+            for ($_i226 = 0; $_i226 < $_size222; ++$_i226)
             {
-              $elem209 = null;
-              $xfer += $input->readString($elem209);
-              $this->attributes []= $elem209;
+              $elem227 = null;
+              $xfer += $input->readString($elem227);
+              $this->attributes []= $elem227;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4540,10 +5189,10 @@ class RemoveRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->keys));
         {
-          foreach ($this->keys as $kiter210 => $viter211)
+          foreach ($this->keys as $kiter228 => $viter229)
           {
-            $xfer += $output->writeString($kiter210);
-            $xfer += $viter211->write($output);
+            $xfer += $output->writeString($kiter228);
+            $xfer += $viter229->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4558,9 +5207,9 @@ class RemoveRequest {
       {
         $output->writeListBegin(TType::STRING, count($this->attributes));
         {
-          foreach ($this->attributes as $iter212)
+          foreach ($this->attributes as $iter230)
           {
-            $xfer += $output->writeString($iter212);
+            $xfer += $output->writeString($iter230);
           }
         }
         $output->writeListEnd();
@@ -5034,6 +5683,12 @@ class ScanRequest {
    * @var array
    */
   public $initialStartKey = null;
+  /**
+   * 对salted table, 确定startKey和stopKey在同一个split内，可开启该选项加速
+   * 
+   * @var bool
+   */
+  public $scanInOneSplit = false;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5126,6 +5781,10 @@ class ScanRequest {
             'class' => '\SDS\Table\Datum',
             ),
           ),
+        15 => array(
+          'var' => 'scanInOneSplit',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -5171,6 +5830,9 @@ class ScanRequest {
       if (isset($vals['initialStartKey'])) {
         $this->initialStartKey = $vals['initialStartKey'];
       }
+      if (isset($vals['scanInOneSplit'])) {
+        $this->scanInOneSplit = $vals['scanInOneSplit'];
+      }
     }
   }
 
@@ -5210,18 +5872,18 @@ class ScanRequest {
         case 3:
           if ($ftype == TType::MAP) {
             $this->startKey = array();
-            $_size213 = 0;
-            $_ktype214 = 0;
-            $_vtype215 = 0;
-            $xfer += $input->readMapBegin($_ktype214, $_vtype215, $_size213);
-            for ($_i217 = 0; $_i217 < $_size213; ++$_i217)
+            $_size231 = 0;
+            $_ktype232 = 0;
+            $_vtype233 = 0;
+            $xfer += $input->readMapBegin($_ktype232, $_vtype233, $_size231);
+            for ($_i235 = 0; $_i235 < $_size231; ++$_i235)
             {
-              $key218 = '';
-              $val219 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key218);
-              $val219 = new \SDS\Table\Datum();
-              $xfer += $val219->read($input);
-              $this->startKey[$key218] = $val219;
+              $key236 = '';
+              $val237 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key236);
+              $val237 = new \SDS\Table\Datum();
+              $xfer += $val237->read($input);
+              $this->startKey[$key236] = $val237;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -5231,18 +5893,18 @@ class ScanRequest {
         case 4:
           if ($ftype == TType::MAP) {
             $this->stopKey = array();
-            $_size220 = 0;
-            $_ktype221 = 0;
-            $_vtype222 = 0;
-            $xfer += $input->readMapBegin($_ktype221, $_vtype222, $_size220);
-            for ($_i224 = 0; $_i224 < $_size220; ++$_i224)
+            $_size238 = 0;
+            $_ktype239 = 0;
+            $_vtype240 = 0;
+            $xfer += $input->readMapBegin($_ktype239, $_vtype240, $_size238);
+            for ($_i242 = 0; $_i242 < $_size238; ++$_i242)
             {
-              $key225 = '';
-              $val226 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key225);
-              $val226 = new \SDS\Table\Datum();
-              $xfer += $val226->read($input);
-              $this->stopKey[$key225] = $val226;
+              $key243 = '';
+              $val244 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key243);
+              $val244 = new \SDS\Table\Datum();
+              $xfer += $val244->read($input);
+              $this->stopKey[$key243] = $val244;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -5252,14 +5914,14 @@ class ScanRequest {
         case 5:
           if ($ftype == TType::LST) {
             $this->attributes = array();
-            $_size227 = 0;
-            $_etype230 = 0;
-            $xfer += $input->readListBegin($_etype230, $_size227);
-            for ($_i231 = 0; $_i231 < $_size227; ++$_i231)
+            $_size245 = 0;
+            $_etype248 = 0;
+            $xfer += $input->readListBegin($_etype248, $_size245);
+            for ($_i249 = 0; $_i249 < $_size245; ++$_i249)
             {
-              $elem232 = null;
-              $xfer += $input->readString($elem232);
-              $this->attributes []= $elem232;
+              $elem250 = null;
+              $xfer += $input->readString($elem250);
+              $this->attributes []= $elem250;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5326,20 +5988,27 @@ class ScanRequest {
         case 14:
           if ($ftype == TType::MAP) {
             $this->initialStartKey = array();
-            $_size233 = 0;
-            $_ktype234 = 0;
-            $_vtype235 = 0;
-            $xfer += $input->readMapBegin($_ktype234, $_vtype235, $_size233);
-            for ($_i237 = 0; $_i237 < $_size233; ++$_i237)
+            $_size251 = 0;
+            $_ktype252 = 0;
+            $_vtype253 = 0;
+            $xfer += $input->readMapBegin($_ktype252, $_vtype253, $_size251);
+            for ($_i255 = 0; $_i255 < $_size251; ++$_i255)
             {
-              $key238 = '';
-              $val239 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key238);
-              $val239 = new \SDS\Table\Datum();
-              $xfer += $val239->read($input);
-              $this->initialStartKey[$key238] = $val239;
+              $key256 = '';
+              $val257 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key256);
+              $val257 = new \SDS\Table\Datum();
+              $xfer += $val257->read($input);
+              $this->initialStartKey[$key256] = $val257;
             }
             $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 15:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->scanInOneSplit);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -5375,10 +6044,10 @@ class ScanRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->startKey));
         {
-          foreach ($this->startKey as $kiter240 => $viter241)
+          foreach ($this->startKey as $kiter258 => $viter259)
           {
-            $xfer += $output->writeString($kiter240);
-            $xfer += $viter241->write($output);
+            $xfer += $output->writeString($kiter258);
+            $xfer += $viter259->write($output);
           }
         }
         $output->writeMapEnd();
@@ -5393,10 +6062,10 @@ class ScanRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->stopKey));
         {
-          foreach ($this->stopKey as $kiter242 => $viter243)
+          foreach ($this->stopKey as $kiter260 => $viter261)
           {
-            $xfer += $output->writeString($kiter242);
-            $xfer += $viter243->write($output);
+            $xfer += $output->writeString($kiter260);
+            $xfer += $viter261->write($output);
           }
         }
         $output->writeMapEnd();
@@ -5411,9 +6080,9 @@ class ScanRequest {
       {
         $output->writeListBegin(TType::STRING, count($this->attributes));
         {
-          foreach ($this->attributes as $iter244)
+          foreach ($this->attributes as $iter262)
           {
-            $xfer += $output->writeString($iter244);
+            $xfer += $output->writeString($iter262);
           }
         }
         $output->writeListEnd();
@@ -5471,14 +6140,19 @@ class ScanRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->initialStartKey));
         {
-          foreach ($this->initialStartKey as $kiter245 => $viter246)
+          foreach ($this->initialStartKey as $kiter263 => $viter264)
           {
-            $xfer += $output->writeString($kiter245);
-            $xfer += $viter246->write($output);
+            $xfer += $output->writeString($kiter263);
+            $xfer += $viter264->write($output);
           }
         }
         $output->writeMapEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->scanInOneSplit !== null) {
+      $xfer += $output->writeFieldBegin('scanInOneSplit', TType::BOOL, 15);
+      $xfer += $output->writeBool($this->scanInOneSplit);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -5514,7 +6188,7 @@ class ScanResult {
    * 
    * @var int
    */
-  public $nextSplitIndex = null;
+  public $nextSplitIndex = -1;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5597,18 +6271,18 @@ class ScanResult {
         case 1:
           if ($ftype == TType::MAP) {
             $this->nextStartKey = array();
-            $_size247 = 0;
-            $_ktype248 = 0;
-            $_vtype249 = 0;
-            $xfer += $input->readMapBegin($_ktype248, $_vtype249, $_size247);
-            for ($_i251 = 0; $_i251 < $_size247; ++$_i251)
+            $_size265 = 0;
+            $_ktype266 = 0;
+            $_vtype267 = 0;
+            $xfer += $input->readMapBegin($_ktype266, $_vtype267, $_size265);
+            for ($_i269 = 0; $_i269 < $_size265; ++$_i269)
             {
-              $key252 = '';
-              $val253 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key252);
-              $val253 = new \SDS\Table\Datum();
-              $xfer += $val253->read($input);
-              $this->nextStartKey[$key252] = $val253;
+              $key270 = '';
+              $val271 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key270);
+              $val271 = new \SDS\Table\Datum();
+              $xfer += $val271->read($input);
+              $this->nextStartKey[$key270] = $val271;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -5618,28 +6292,28 @@ class ScanResult {
         case 2:
           if ($ftype == TType::LST) {
             $this->records = array();
-            $_size254 = 0;
-            $_etype257 = 0;
-            $xfer += $input->readListBegin($_etype257, $_size254);
-            for ($_i258 = 0; $_i258 < $_size254; ++$_i258)
+            $_size272 = 0;
+            $_etype275 = 0;
+            $xfer += $input->readListBegin($_etype275, $_size272);
+            for ($_i276 = 0; $_i276 < $_size272; ++$_i276)
             {
-              $elem259 = null;
-              $elem259 = array();
-              $_size260 = 0;
-              $_ktype261 = 0;
-              $_vtype262 = 0;
-              $xfer += $input->readMapBegin($_ktype261, $_vtype262, $_size260);
-              for ($_i264 = 0; $_i264 < $_size260; ++$_i264)
+              $elem277 = null;
+              $elem277 = array();
+              $_size278 = 0;
+              $_ktype279 = 0;
+              $_vtype280 = 0;
+              $xfer += $input->readMapBegin($_ktype279, $_vtype280, $_size278);
+              for ($_i282 = 0; $_i282 < $_size278; ++$_i282)
               {
-                $key265 = '';
-                $val266 = new \SDS\Table\Datum();
-                $xfer += $input->readString($key265);
-                $val266 = new \SDS\Table\Datum();
-                $xfer += $val266->read($input);
-                $elem259[$key265] = $val266;
+                $key283 = '';
+                $val284 = new \SDS\Table\Datum();
+                $xfer += $input->readString($key283);
+                $val284 = new \SDS\Table\Datum();
+                $xfer += $val284->read($input);
+                $elem277[$key283] = $val284;
               }
               $xfer += $input->readMapEnd();
-              $this->records []= $elem259;
+              $this->records []= $elem277;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5681,10 +6355,10 @@ class ScanResult {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->nextStartKey));
         {
-          foreach ($this->nextStartKey as $kiter267 => $viter268)
+          foreach ($this->nextStartKey as $kiter285 => $viter286)
           {
-            $xfer += $output->writeString($kiter267);
-            $xfer += $viter268->write($output);
+            $xfer += $output->writeString($kiter285);
+            $xfer += $viter286->write($output);
           }
         }
         $output->writeMapEnd();
@@ -5699,15 +6373,15 @@ class ScanResult {
       {
         $output->writeListBegin(TType::MAP, count($this->records));
         {
-          foreach ($this->records as $iter269)
+          foreach ($this->records as $iter287)
           {
             {
-              $output->writeMapBegin(TType::STRING, TType::STRUCT, count($iter269));
+              $output->writeMapBegin(TType::STRING, TType::STRUCT, count($iter287));
               {
-                foreach ($iter269 as $kiter270 => $viter271)
+                foreach ($iter287 as $kiter288 => $viter289)
                 {
-                  $xfer += $output->writeString($kiter270);
-                  $xfer += $viter271->write($output);
+                  $xfer += $output->writeString($kiter288);
+                  $xfer += $viter289->write($output);
                 }
               }
               $output->writeMapEnd();
@@ -6212,15 +6886,15 @@ class BatchRequest {
         case 1:
           if ($ftype == TType::LST) {
             $this->items = array();
-            $_size272 = 0;
-            $_etype275 = 0;
-            $xfer += $input->readListBegin($_etype275, $_size272);
-            for ($_i276 = 0; $_i276 < $_size272; ++$_i276)
+            $_size290 = 0;
+            $_etype293 = 0;
+            $xfer += $input->readListBegin($_etype293, $_size290);
+            for ($_i294 = 0; $_i294 < $_size290; ++$_i294)
             {
-              $elem277 = null;
-              $elem277 = new \SDS\Table\BatchRequestItem();
-              $xfer += $elem277->read($input);
-              $this->items []= $elem277;
+              $elem295 = null;
+              $elem295 = new \SDS\Table\BatchRequestItem();
+              $xfer += $elem295->read($input);
+              $this->items []= $elem295;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -6248,9 +6922,9 @@ class BatchRequest {
       {
         $output->writeListBegin(TType::STRUCT, count($this->items));
         {
-          foreach ($this->items as $iter278)
+          foreach ($this->items as $iter296)
           {
-            $xfer += $iter278->write($output);
+            $xfer += $iter296->write($output);
           }
         }
         $output->writeListEnd();
@@ -6315,15 +6989,15 @@ class BatchResult {
         case 1:
           if ($ftype == TType::LST) {
             $this->items = array();
-            $_size279 = 0;
-            $_etype282 = 0;
-            $xfer += $input->readListBegin($_etype282, $_size279);
-            for ($_i283 = 0; $_i283 < $_size279; ++$_i283)
+            $_size297 = 0;
+            $_etype300 = 0;
+            $xfer += $input->readListBegin($_etype300, $_size297);
+            for ($_i301 = 0; $_i301 < $_size297; ++$_i301)
             {
-              $elem284 = null;
-              $elem284 = new \SDS\Table\BatchResultItem();
-              $xfer += $elem284->read($input);
-              $this->items []= $elem284;
+              $elem302 = null;
+              $elem302 = new \SDS\Table\BatchResultItem();
+              $xfer += $elem302->read($input);
+              $this->items []= $elem302;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -6351,9 +7025,9 @@ class BatchResult {
       {
         $output->writeListBegin(TType::STRUCT, count($this->items));
         {
-          foreach ($this->items as $iter285)
+          foreach ($this->items as $iter303)
           {
-            $xfer += $iter285->write($output);
+            $xfer += $iter303->write($output);
           }
         }
         $output->writeListEnd();
@@ -6501,6 +7175,12 @@ class RowEdit {
    * @var int
    */
   public $consumeOffset = null;
+  /**
+   * 是否删除整行
+   * 
+   * @var bool
+   */
+  public $deleteRow = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -6535,6 +7215,10 @@ class RowEdit {
           'var' => 'consumeOffset',
           'type' => TType::I64,
           ),
+        4 => array(
+          'var' => 'deleteRow',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -6546,6 +7230,9 @@ class RowEdit {
       }
       if (isset($vals['consumeOffset'])) {
         $this->consumeOffset = $vals['consumeOffset'];
+      }
+      if (isset($vals['deleteRow'])) {
+        $this->deleteRow = $vals['deleteRow'];
       }
     }
   }
@@ -6572,18 +7259,18 @@ class RowEdit {
         case 1:
           if ($ftype == TType::MAP) {
             $this->keys = array();
-            $_size286 = 0;
-            $_ktype287 = 0;
-            $_vtype288 = 0;
-            $xfer += $input->readMapBegin($_ktype287, $_vtype288, $_size286);
-            for ($_i290 = 0; $_i290 < $_size286; ++$_i290)
+            $_size304 = 0;
+            $_ktype305 = 0;
+            $_vtype306 = 0;
+            $xfer += $input->readMapBegin($_ktype305, $_vtype306, $_size304);
+            for ($_i308 = 0; $_i308 < $_size304; ++$_i308)
             {
-              $key291 = '';
-              $val292 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key291);
-              $val292 = new \SDS\Table\Datum();
-              $xfer += $val292->read($input);
-              $this->keys[$key291] = $val292;
+              $key309 = '';
+              $val310 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key309);
+              $val310 = new \SDS\Table\Datum();
+              $xfer += $val310->read($input);
+              $this->keys[$key309] = $val310;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -6593,18 +7280,18 @@ class RowEdit {
         case 2:
           if ($ftype == TType::MAP) {
             $this->edits = array();
-            $_size293 = 0;
-            $_ktype294 = 0;
-            $_vtype295 = 0;
-            $xfer += $input->readMapBegin($_ktype294, $_vtype295, $_size293);
-            for ($_i297 = 0; $_i297 < $_size293; ++$_i297)
+            $_size311 = 0;
+            $_ktype312 = 0;
+            $_vtype313 = 0;
+            $xfer += $input->readMapBegin($_ktype312, $_vtype313, $_size311);
+            for ($_i315 = 0; $_i315 < $_size311; ++$_i315)
             {
-              $key298 = '';
-              $val299 = new \SDS\Table\EditDatum();
-              $xfer += $input->readString($key298);
-              $val299 = new \SDS\Table\EditDatum();
-              $xfer += $val299->read($input);
-              $this->edits[$key298] = $val299;
+              $key316 = '';
+              $val317 = new \SDS\Table\EditDatum();
+              $xfer += $input->readString($key316);
+              $val317 = new \SDS\Table\EditDatum();
+              $xfer += $val317->read($input);
+              $this->edits[$key316] = $val317;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -6614,6 +7301,13 @@ class RowEdit {
         case 3:
           if ($ftype == TType::I64) {
             $xfer += $input->readI64($this->consumeOffset);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->deleteRow);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -6639,10 +7333,10 @@ class RowEdit {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->keys));
         {
-          foreach ($this->keys as $kiter300 => $viter301)
+          foreach ($this->keys as $kiter318 => $viter319)
           {
-            $xfer += $output->writeString($kiter300);
-            $xfer += $viter301->write($output);
+            $xfer += $output->writeString($kiter318);
+            $xfer += $viter319->write($output);
           }
         }
         $output->writeMapEnd();
@@ -6657,10 +7351,10 @@ class RowEdit {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->edits));
         {
-          foreach ($this->edits as $kiter302 => $viter303)
+          foreach ($this->edits as $kiter320 => $viter321)
           {
-            $xfer += $output->writeString($kiter302);
-            $xfer += $viter303->write($output);
+            $xfer += $output->writeString($kiter320);
+            $xfer += $viter321->write($output);
           }
         }
         $output->writeMapEnd();
@@ -6670,6 +7364,11 @@ class RowEdit {
     if ($this->consumeOffset !== null) {
       $xfer += $output->writeFieldBegin('consumeOffset', TType::I64, 3);
       $xfer += $output->writeI64($this->consumeOffset);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deleteRow !== null) {
+      $xfer += $output->writeFieldBegin('deleteRow', TType::BOOL, 4);
+      $xfer += $output->writeBool($this->deleteRow);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -6692,17 +7391,17 @@ class DataConsumeRequest {
    */
   public $tableName = null;
   /**
-   * 表分片ID
+   * 表分区ID
    * 
    * @var int
    */
   public $partitionId = null;
   /**
-   * 订阅者ID
+   * 订阅者名字
    * 
    * @var string
    */
-  public $subscriberId = null;
+  public $subscriberName = null;
   /**
    * 消费数量
    * 
@@ -6725,10 +7424,10 @@ class DataConsumeRequest {
           ),
         2 => array(
           'var' => 'partitionId',
-          'type' => TType::I64,
+          'type' => TType::I32,
           ),
         3 => array(
-          'var' => 'subscriberId',
+          'var' => 'subscriberName',
           'type' => TType::STRING,
           ),
         4 => array(
@@ -6757,8 +7456,8 @@ class DataConsumeRequest {
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
-      if (isset($vals['subscriberId'])) {
-        $this->subscriberId = $vals['subscriberId'];
+      if (isset($vals['subscriberName'])) {
+        $this->subscriberName = $vals['subscriberName'];
       }
       if (isset($vals['consumeNumber'])) {
         $this->consumeNumber = $vals['consumeNumber'];
@@ -6796,15 +7495,15 @@ class DataConsumeRequest {
           }
           break;
         case 2:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->partitionId);
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 3:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberId);
+            $xfer += $input->readString($this->subscriberName);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -6819,18 +7518,18 @@ class DataConsumeRequest {
         case 5:
           if ($ftype == TType::MAP) {
             $this->consumeOffset = array();
-            $_size304 = 0;
-            $_ktype305 = 0;
-            $_vtype306 = 0;
-            $xfer += $input->readMapBegin($_ktype305, $_vtype306, $_size304);
-            for ($_i308 = 0; $_i308 < $_size304; ++$_i308)
+            $_size322 = 0;
+            $_ktype323 = 0;
+            $_vtype324 = 0;
+            $xfer += $input->readMapBegin($_ktype323, $_vtype324, $_size322);
+            for ($_i326 = 0; $_i326 < $_size322; ++$_i326)
             {
-              $key309 = '';
-              $val310 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key309);
-              $val310 = new \SDS\Table\Datum();
-              $xfer += $val310->read($input);
-              $this->consumeOffset[$key309] = $val310;
+              $key327 = '';
+              $val328 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key327);
+              $val328 = new \SDS\Table\Datum();
+              $xfer += $val328->read($input);
+              $this->consumeOffset[$key327] = $val328;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -6856,13 +7555,13 @@ class DataConsumeRequest {
       $xfer += $output->writeFieldEnd();
     }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I64, 2);
-      $xfer += $output->writeI64($this->partitionId);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->subscriberId !== null) {
-      $xfer += $output->writeFieldBegin('subscriberId', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberId);
+    if ($this->subscriberName !== null) {
+      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
+      $xfer += $output->writeString($this->subscriberName);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->consumeNumber !== null) {
@@ -6878,10 +7577,10 @@ class DataConsumeRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->consumeOffset));
         {
-          foreach ($this->consumeOffset as $kiter311 => $viter312)
+          foreach ($this->consumeOffset as $kiter329 => $viter330)
           {
-            $xfer += $output->writeString($kiter311);
-            $xfer += $viter312->write($output);
+            $xfer += $output->writeString($kiter329);
+            $xfer += $viter330->write($output);
           }
         }
         $output->writeMapEnd();
@@ -7008,18 +7707,18 @@ class DataConsumeResult {
         case 1:
           if ($ftype == TType::MAP) {
             $this->nextConsumeOffset = array();
-            $_size313 = 0;
-            $_ktype314 = 0;
-            $_vtype315 = 0;
-            $xfer += $input->readMapBegin($_ktype314, $_vtype315, $_size313);
-            for ($_i317 = 0; $_i317 < $_size313; ++$_i317)
+            $_size331 = 0;
+            $_ktype332 = 0;
+            $_vtype333 = 0;
+            $xfer += $input->readMapBegin($_ktype332, $_vtype333, $_size331);
+            for ($_i335 = 0; $_i335 < $_size331; ++$_i335)
             {
-              $key318 = '';
-              $val319 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key318);
-              $val319 = new \SDS\Table\Datum();
-              $xfer += $val319->read($input);
-              $this->nextConsumeOffset[$key318] = $val319;
+              $key336 = '';
+              $val337 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key336);
+              $val337 = new \SDS\Table\Datum();
+              $xfer += $val337->read($input);
+              $this->nextConsumeOffset[$key336] = $val337;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7029,28 +7728,28 @@ class DataConsumeResult {
         case 2:
           if ($ftype == TType::LST) {
             $this->records = array();
-            $_size320 = 0;
-            $_etype323 = 0;
-            $xfer += $input->readListBegin($_etype323, $_size320);
-            for ($_i324 = 0; $_i324 < $_size320; ++$_i324)
+            $_size338 = 0;
+            $_etype341 = 0;
+            $xfer += $input->readListBegin($_etype341, $_size338);
+            for ($_i342 = 0; $_i342 < $_size338; ++$_i342)
             {
-              $elem325 = null;
-              $elem325 = array();
-              $_size326 = 0;
-              $_ktype327 = 0;
-              $_vtype328 = 0;
-              $xfer += $input->readMapBegin($_ktype327, $_vtype328, $_size326);
-              for ($_i330 = 0; $_i330 < $_size326; ++$_i330)
+              $elem343 = null;
+              $elem343 = array();
+              $_size344 = 0;
+              $_ktype345 = 0;
+              $_vtype346 = 0;
+              $xfer += $input->readMapBegin($_ktype345, $_vtype346, $_size344);
+              for ($_i348 = 0; $_i348 < $_size344; ++$_i348)
               {
-                $key331 = '';
-                $val332 = new \SDS\Table\Datum();
-                $xfer += $input->readString($key331);
-                $val332 = new \SDS\Table\Datum();
-                $xfer += $val332->read($input);
-                $elem325[$key331] = $val332;
+                $key349 = '';
+                $val350 = new \SDS\Table\Datum();
+                $xfer += $input->readString($key349);
+                $val350 = new \SDS\Table\Datum();
+                $xfer += $val350->read($input);
+                $elem343[$key349] = $val350;
               }
               $xfer += $input->readMapEnd();
-              $this->records []= $elem325;
+              $this->records []= $elem343;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -7060,14 +7759,14 @@ class DataConsumeResult {
         case 3:
           if ($ftype == TType::LST) {
             $this->keys = array();
-            $_size333 = 0;
-            $_etype336 = 0;
-            $xfer += $input->readListBegin($_etype336, $_size333);
-            for ($_i337 = 0; $_i337 < $_size333; ++$_i337)
+            $_size351 = 0;
+            $_etype354 = 0;
+            $xfer += $input->readListBegin($_etype354, $_size351);
+            for ($_i355 = 0; $_i355 < $_size351; ++$_i355)
             {
-              $elem338 = null;
-              $xfer += $input->readString($elem338);
-              $this->keys []= $elem338;
+              $elem356 = null;
+              $xfer += $input->readString($elem356);
+              $this->keys []= $elem356;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -7102,10 +7801,10 @@ class DataConsumeResult {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->nextConsumeOffset));
         {
-          foreach ($this->nextConsumeOffset as $kiter339 => $viter340)
+          foreach ($this->nextConsumeOffset as $kiter357 => $viter358)
           {
-            $xfer += $output->writeString($kiter339);
-            $xfer += $viter340->write($output);
+            $xfer += $output->writeString($kiter357);
+            $xfer += $viter358->write($output);
           }
         }
         $output->writeMapEnd();
@@ -7120,15 +7819,15 @@ class DataConsumeResult {
       {
         $output->writeListBegin(TType::MAP, count($this->records));
         {
-          foreach ($this->records as $iter341)
+          foreach ($this->records as $iter359)
           {
             {
-              $output->writeMapBegin(TType::STRING, TType::STRUCT, count($iter341));
+              $output->writeMapBegin(TType::STRING, TType::STRUCT, count($iter359));
               {
-                foreach ($iter341 as $kiter342 => $viter343)
+                foreach ($iter359 as $kiter360 => $viter361)
                 {
-                  $xfer += $output->writeString($kiter342);
-                  $xfer += $viter343->write($output);
+                  $xfer += $output->writeString($kiter360);
+                  $xfer += $viter361->write($output);
                 }
               }
               $output->writeMapEnd();
@@ -7147,9 +7846,9 @@ class DataConsumeResult {
       {
         $output->writeListBegin(TType::STRING, count($this->keys));
         {
-          foreach ($this->keys as $iter344)
+          foreach ($this->keys as $iter362)
           {
-            $xfer += $output->writeString($iter344);
+            $xfer += $output->writeString($iter362);
           }
         }
         $output->writeListEnd();
@@ -7181,17 +7880,17 @@ class EditConsumeRequest {
    */
   public $tableName = null;
   /**
-   * 表分片ID
+   * 表分区ID
    * 
    * @var int
    */
   public $partitionId = null;
   /**
-   * 订阅者ID
+   * 订阅者名字
    * 
    * @var string
    */
-  public $subscriberId = null;
+  public $subscriberName = null;
   /**
    * 消费数量
    * 
@@ -7214,10 +7913,10 @@ class EditConsumeRequest {
           ),
         2 => array(
           'var' => 'partitionId',
-          'type' => TType::I64,
+          'type' => TType::I32,
           ),
         3 => array(
-          'var' => 'subscriberId',
+          'var' => 'subscriberName',
           'type' => TType::STRING,
           ),
         4 => array(
@@ -7237,8 +7936,8 @@ class EditConsumeRequest {
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
-      if (isset($vals['subscriberId'])) {
-        $this->subscriberId = $vals['subscriberId'];
+      if (isset($vals['subscriberName'])) {
+        $this->subscriberName = $vals['subscriberName'];
       }
       if (isset($vals['consumeNumber'])) {
         $this->consumeNumber = $vals['consumeNumber'];
@@ -7276,15 +7975,15 @@ class EditConsumeRequest {
           }
           break;
         case 2:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->partitionId);
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 3:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberId);
+            $xfer += $input->readString($this->subscriberName);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -7322,13 +8021,13 @@ class EditConsumeRequest {
       $xfer += $output->writeFieldEnd();
     }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I64, 2);
-      $xfer += $output->writeI64($this->partitionId);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->subscriberId !== null) {
-      $xfer += $output->writeFieldBegin('subscriberId', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberId);
+    if ($this->subscriberName !== null) {
+      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
+      $xfer += $output->writeString($this->subscriberName);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->consumeNumber !== null) {
@@ -7434,15 +8133,15 @@ class EditConsumeResult {
         case 2:
           if ($ftype == TType::LST) {
             $this->rowEdits = array();
-            $_size345 = 0;
-            $_etype348 = 0;
-            $xfer += $input->readListBegin($_etype348, $_size345);
-            for ($_i349 = 0; $_i349 < $_size345; ++$_i349)
+            $_size363 = 0;
+            $_etype366 = 0;
+            $xfer += $input->readListBegin($_etype366, $_size363);
+            for ($_i367 = 0; $_i367 < $_size363; ++$_i367)
             {
-              $elem350 = null;
-              $elem350 = new \SDS\Table\RowEdit();
-              $xfer += $elem350->read($input);
-              $this->rowEdits []= $elem350;
+              $elem368 = null;
+              $elem368 = new \SDS\Table\RowEdit();
+              $xfer += $elem368->read($input);
+              $this->rowEdits []= $elem368;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -7482,9 +8181,9 @@ class EditConsumeResult {
       {
         $output->writeListBegin(TType::STRUCT, count($this->rowEdits));
         {
-          foreach ($this->rowEdits as $iter351)
+          foreach ($this->rowEdits as $iter369)
           {
-            $xfer += $iter351->write($output);
+            $xfer += $iter369->write($output);
           }
         }
         $output->writeListEnd();
@@ -7516,17 +8215,17 @@ class DataCommitRequest {
    */
   public $tableName = null;
   /**
-   * 表分片ID
+   * 表分区ID
    * 
    * @var int
    */
   public $partitionId = null;
   /**
-   * 订阅者ID
+   * 订阅者名字
    * 
    * @var string
    */
-  public $subscriberId = null;
+  public $subscriberName = null;
   /**
    * 当前消费存量数据的最后偏移
    * 
@@ -7549,10 +8248,10 @@ class DataCommitRequest {
           ),
         2 => array(
           'var' => 'partitionId',
-          'type' => TType::I64,
+          'type' => TType::I32,
           ),
         3 => array(
-          'var' => 'subscriberId',
+          'var' => 'subscriberName',
           'type' => TType::STRING,
           ),
         4 => array(
@@ -7581,8 +8280,8 @@ class DataCommitRequest {
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
-      if (isset($vals['subscriberId'])) {
-        $this->subscriberId = $vals['subscriberId'];
+      if (isset($vals['subscriberName'])) {
+        $this->subscriberName = $vals['subscriberName'];
       }
       if (isset($vals['lastConsumedOffset'])) {
         $this->lastConsumedOffset = $vals['lastConsumedOffset'];
@@ -7620,15 +8319,15 @@ class DataCommitRequest {
           }
           break;
         case 2:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->partitionId);
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 3:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberId);
+            $xfer += $input->readString($this->subscriberName);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -7636,18 +8335,18 @@ class DataCommitRequest {
         case 4:
           if ($ftype == TType::MAP) {
             $this->lastConsumedOffset = array();
-            $_size352 = 0;
-            $_ktype353 = 0;
-            $_vtype354 = 0;
-            $xfer += $input->readMapBegin($_ktype353, $_vtype354, $_size352);
-            for ($_i356 = 0; $_i356 < $_size352; ++$_i356)
+            $_size370 = 0;
+            $_ktype371 = 0;
+            $_vtype372 = 0;
+            $xfer += $input->readMapBegin($_ktype371, $_vtype372, $_size370);
+            for ($_i374 = 0; $_i374 < $_size370; ++$_i374)
             {
-              $key357 = '';
-              $val358 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key357);
-              $val358 = new \SDS\Table\Datum();
-              $xfer += $val358->read($input);
-              $this->lastConsumedOffset[$key357] = $val358;
+              $key375 = '';
+              $val376 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key375);
+              $val376 = new \SDS\Table\Datum();
+              $xfer += $val376->read($input);
+              $this->lastConsumedOffset[$key375] = $val376;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7680,13 +8379,13 @@ class DataCommitRequest {
       $xfer += $output->writeFieldEnd();
     }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I64, 2);
-      $xfer += $output->writeI64($this->partitionId);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->subscriberId !== null) {
-      $xfer += $output->writeFieldBegin('subscriberId', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberId);
+    if ($this->subscriberName !== null) {
+      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
+      $xfer += $output->writeString($this->subscriberName);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->lastConsumedOffset !== null) {
@@ -7697,10 +8396,10 @@ class DataCommitRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->lastConsumedOffset));
         {
-          foreach ($this->lastConsumedOffset as $kiter359 => $viter360)
+          foreach ($this->lastConsumedOffset as $kiter377 => $viter378)
           {
-            $xfer += $output->writeString($kiter359);
-            $xfer += $viter360->write($output);
+            $xfer += $output->writeString($kiter377);
+            $xfer += $viter378->write($output);
           }
         }
         $output->writeMapEnd();
@@ -7809,17 +8508,17 @@ class EditCommitRequest {
    */
   public $tableName = null;
   /**
-   * 表分片ID
+   * 表分区ID
    * 
    * @var int
    */
   public $partitionId = null;
   /**
-   * 订阅者ID
+   * 订阅者名字
    * 
    * @var string
    */
-  public $subscriberId = null;
+  public $subscriberName = null;
   /**
    * 当前消费增量数据的最后偏移
    * 
@@ -7842,10 +8541,10 @@ class EditCommitRequest {
           ),
         2 => array(
           'var' => 'partitionId',
-          'type' => TType::I64,
+          'type' => TType::I32,
           ),
         3 => array(
-          'var' => 'subscriberId',
+          'var' => 'subscriberName',
           'type' => TType::STRING,
           ),
         4 => array(
@@ -7865,8 +8564,8 @@ class EditCommitRequest {
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
-      if (isset($vals['subscriberId'])) {
-        $this->subscriberId = $vals['subscriberId'];
+      if (isset($vals['subscriberName'])) {
+        $this->subscriberName = $vals['subscriberName'];
       }
       if (isset($vals['lastConsumedOffset'])) {
         $this->lastConsumedOffset = $vals['lastConsumedOffset'];
@@ -7904,15 +8603,15 @@ class EditCommitRequest {
           }
           break;
         case 2:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->partitionId);
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 3:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberId);
+            $xfer += $input->readString($this->subscriberName);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -7950,13 +8649,13 @@ class EditCommitRequest {
       $xfer += $output->writeFieldEnd();
     }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I64, 2);
-      $xfer += $output->writeI64($this->partitionId);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->subscriberId !== null) {
-      $xfer += $output->writeFieldBegin('subscriberId', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberId);
+    if ($this->subscriberName !== null) {
+      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
+      $xfer += $output->writeString($this->subscriberName);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->lastConsumedOffset !== null) {
@@ -8044,6 +8743,332 @@ class EditCommitResult {
     if ($this->success !== null) {
       $xfer += $output->writeFieldBegin('success', TType::BOOL, 1);
       $xfer += $output->writeBool($this->success);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class ConsumedOffset {
+  static $_TSPEC;
+
+  /**
+   * 当前存量数据的消费偏移
+   * 
+   * @var array
+   */
+  public $consumedDataOffset = null;
+  /**
+   * 存量数据是否消费完毕
+   * 
+   * @var bool
+   */
+  public $dataConsumeFinished = null;
+  /**
+   * 当前增量数据的消费偏移
+   * 
+   * @var int
+   */
+  public $consumedEditOffset = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'consumedDataOffset',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Table\Datum',
+            ),
+          ),
+        2 => array(
+          'var' => 'dataConsumeFinished',
+          'type' => TType::BOOL,
+          ),
+        3 => array(
+          'var' => 'consumedEditOffset',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['consumedDataOffset'])) {
+        $this->consumedDataOffset = $vals['consumedDataOffset'];
+      }
+      if (isset($vals['dataConsumeFinished'])) {
+        $this->dataConsumeFinished = $vals['dataConsumeFinished'];
+      }
+      if (isset($vals['consumedEditOffset'])) {
+        $this->consumedEditOffset = $vals['consumedEditOffset'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ConsumedOffset';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::MAP) {
+            $this->consumedDataOffset = array();
+            $_size379 = 0;
+            $_ktype380 = 0;
+            $_vtype381 = 0;
+            $xfer += $input->readMapBegin($_ktype380, $_vtype381, $_size379);
+            for ($_i383 = 0; $_i383 < $_size379; ++$_i383)
+            {
+              $key384 = '';
+              $val385 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key384);
+              $val385 = new \SDS\Table\Datum();
+              $xfer += $val385->read($input);
+              $this->consumedDataOffset[$key384] = $val385;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->dataConsumeFinished);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->consumedEditOffset);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ConsumedOffset');
+    if ($this->consumedDataOffset !== null) {
+      if (!is_array($this->consumedDataOffset)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('consumedDataOffset', TType::MAP, 1);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->consumedDataOffset));
+        {
+          foreach ($this->consumedDataOffset as $kiter386 => $viter387)
+          {
+            $xfer += $output->writeString($kiter386);
+            $xfer += $viter387->write($output);
+          }
+        }
+        $output->writeMapEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->dataConsumeFinished !== null) {
+      $xfer += $output->writeFieldBegin('dataConsumeFinished', TType::BOOL, 2);
+      $xfer += $output->writeBool($this->dataConsumeFinished);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->consumedEditOffset !== null) {
+      $xfer += $output->writeFieldBegin('consumedEditOffset', TType::I64, 3);
+      $xfer += $output->writeI64($this->consumedEditOffset);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class CommittedOffset {
+  static $_TSPEC;
+
+  /**
+   * 当前存量数据已确认的消费偏移
+   * 
+   * @var array
+   */
+  public $committedDataOffset = null;
+  /**
+   * 存量数据是否确认消费完毕
+   * 
+   * @var bool
+   */
+  public $dataCommitFinished = null;
+  /**
+   * 当前增量数据已确认的消费偏移
+   * 
+   * @var int
+   */
+  public $committedEditOffset = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'committedDataOffset',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Table\Datum',
+            ),
+          ),
+        2 => array(
+          'var' => 'dataCommitFinished',
+          'type' => TType::BOOL,
+          ),
+        3 => array(
+          'var' => 'committedEditOffset',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['committedDataOffset'])) {
+        $this->committedDataOffset = $vals['committedDataOffset'];
+      }
+      if (isset($vals['dataCommitFinished'])) {
+        $this->dataCommitFinished = $vals['dataCommitFinished'];
+      }
+      if (isset($vals['committedEditOffset'])) {
+        $this->committedEditOffset = $vals['committedEditOffset'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'CommittedOffset';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::MAP) {
+            $this->committedDataOffset = array();
+            $_size388 = 0;
+            $_ktype389 = 0;
+            $_vtype390 = 0;
+            $xfer += $input->readMapBegin($_ktype389, $_vtype390, $_size388);
+            for ($_i392 = 0; $_i392 < $_size388; ++$_i392)
+            {
+              $key393 = '';
+              $val394 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key393);
+              $val394 = new \SDS\Table\Datum();
+              $xfer += $val394->read($input);
+              $this->committedDataOffset[$key393] = $val394;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->dataCommitFinished);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->committedEditOffset);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('CommittedOffset');
+    if ($this->committedDataOffset !== null) {
+      if (!is_array($this->committedDataOffset)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('committedDataOffset', TType::MAP, 1);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->committedDataOffset));
+        {
+          foreach ($this->committedDataOffset as $kiter395 => $viter396)
+          {
+            $xfer += $output->writeString($kiter395);
+            $xfer += $viter396->write($output);
+          }
+        }
+        $output->writeMapEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->dataCommitFinished !== null) {
+      $xfer += $output->writeFieldBegin('dataCommitFinished', TType::BOOL, 2);
+      $xfer += $output->writeBool($this->dataCommitFinished);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->committedEditOffset !== null) {
+      $xfer += $output->writeFieldBegin('committedEditOffset', TType::I64, 3);
+      $xfer += $output->writeI64($this->committedEditOffset);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
