@@ -42,6 +42,7 @@ class EMQClient {
       case 'getQueueInfo':
       case 'queryPermission':
       case 'listPermission':
+      case 'listTag':
         self::validateQueueName($arguments[0]->queueName);
         break;
       case 'setQueueAttributes':
@@ -77,6 +78,30 @@ class EMQClient {
           $idList[] = $entryId;
           self::checkSendEntry($entry);
         }
+        break;
+      case 'createTag':
+        self::validateQueueName($arguments[0]->queueName);
+        self::validateTagName($arguments[0]->tagName);
+        self::checkParameterRange("tagReadQPS", $arguments[0]->readQPSQuota,
+            Constant::get('GALAXY_EMQ_QUEUE_READ_QPS_MINIMAL'),
+            Constant::get('GALAXY_EMQ_QUEUE_READ_QPS_MAXIMAL'));
+        if (!is_null($arguments[0]->userAttributes)) {
+          self::validateUserAttributes($arguments[0]->userAttributes);
+        }
+        if (!is_null($arguments[0]->attributeName)) {
+          self::checkNotEmpty($arguments[0]->attributeName, "attributeName");
+          self::checkMessageAttribute($arguments[0]->attributeValue);
+        }
+        break;
+      case 'getTagInfo':
+        self::validateQueueName($arguments[0]->queueName);
+        if (!is_null($arguments[0]->tagName)) {
+          self::validateTagName($arguments[0]->tagName);
+        }
+        break;
+      case 'deleteTag':
+        self::validateQueueName($arguments[0]->queueName);
+        self::validateTagName($arguments[0]->tagName);
         break;
       case 'sendMessage':
         self::validateQueueName($arguments[0]->queueName);
@@ -164,6 +189,7 @@ class EMQClient {
         Constant::get('GALAXY_EMQ_MESSAGE_INVISIBILITY_SECONDS_MAXIMAL'));
     if (!is_null($entry->messageAttributes)) {
       foreach ($entry->messageAttributes as $name => $attribute) {
+        self::checkNotEmpty($name, "attribute name");
         self::checkMessageAttribute($attribute);
       }
     }
@@ -238,6 +264,17 @@ class EMQClient {
     self::checkParameterRange("partitionNumber", $attribute->partitionNumber,
         Constant::get('GALAXY_EMQ_QUEUE_PARTITION_NUMBER_MINIMAL'),
         Constant::get('GALAXY_EMQ_QUEUE_PARTITION_NUMBER_MAXIMAL'));
+
+    if (!is_null($attribute->userAttributes)) {
+      self::validateUserAttributes($attribute->userAttributes);
+    }
+  }
+
+  public static function validateUserAttributes($attributes) {
+    foreach ($attributes as $key => $value) {
+      self::checkNotEmpty($key, "user attribute name");
+      self::checkNotEmpty($value, "user attribute value for \"$key\"");
+    }
   }
 
   /**
@@ -272,6 +309,10 @@ class EMQClient {
       throw new GalaxyEmqServiceException(array('errMsg' => 'Invalid Queue Name',
           'details' => 'allow exactly one "/" in queue name:' . $queueName));
     }
+  }
+
+  public static function validateTagName($tagName) {
+    self::checkNotEmpty($tagName, "tag name");
   }
 
   public static function validateQueueNamePrefix($queueNamePrefix) {

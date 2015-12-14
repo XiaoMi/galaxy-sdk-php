@@ -11,6 +11,8 @@ use EMQ\Message\ReceiveMessageRequest;
 use EMQ\Message\SendMessageRequest;
 use EMQ\Queue\CreateQueueRequest;
 use EMQ\Queue\DeleteQueueRequest;
+use EMQ\Queue\CreateTagRequest;
+use EMQ\Queue\DeleteTagRequest;
 use EMQ\Queue\QueueQuota;
 use EMQ\Queue\SetQueueQuotaRequest;
 use EMQ\Queue\SpaceQuota;
@@ -51,6 +53,13 @@ try {
   print_r($createQueueResponse);
   $queueName = $createQueueResponse->queueName;
 
+  $tagName = "tagTest";
+  $createTagRequest = new CreateTagRequest(array(
+    'queueName' => $queueName,
+    'tagName' => $tagName,
+  ));
+  print_r($queueClient->createTag($createTagRequest));
+
   $messageBody = "EMQExample";
   $sendMessageRequest = new SendMessageRequest();
   $sendMessageRequest->queueName = $queueName;
@@ -61,23 +70,43 @@ try {
 
   $receiveMessageRequest = new ReceiveMessageRequest();
   $receiveMessageRequest->queueName = $queueName;
-  $receiveMessageResponse = $messageClient->receiveMessage($receiveMessageRequest);
+  $receiveMessageResponse = null;
+  while (empty($receiveMessageResponse)) {
+    $receiveMessageResponse = $messageClient->receiveMessage($receiveMessageRequest);
+  }
+  $deleteMessageBatchRequest = new DeleteMessageBatchRequest();
+  $deleteMessageBatchRequest->queueName = $queueName;
   foreach ($receiveMessageResponse as $message) {
-    echo "Receive:\n MessageBody: $message->messageBody " .
+    echo "Received from default:\n MessageBody: $message->messageBody " .
+        "MessageId: $message->messageID ReceiptHandle: $message->receiptHandle\n\n";
+    $deleteMessageBatchRequest->deleteMessageBatchRequestEntryList[] =
+        new DeleteMessageBatchRequestEntry(
+            array('receiptHandle' => $message->receiptHandle));
+  }
+  $messageClient->deleteMessageBatch($deleteMessageBatchRequest);
+  echo "Delete Messages.\n\n";
+
+  $receiveMessageRequest = new ReceiveMessageRequest();
+  $receiveMessageRequest->queueName = $queueName;
+  $receiveMessageRequest->tagName = $tagName;
+  $receiveMessageResponse = null;
+  while (empty($receiveMessageResponse)) {
+    $receiveMessageResponse = $messageClient->receiveMessage($receiveMessageRequest);
+  }
+  foreach ($receiveMessageResponse as $message) {
+    echo "Received from tag:\n MessageBody: $message->messageBody " .
         "MessageId: $message->messageID ReceiptHandle: $message->receiptHandle\n\n";
   }
 
-  if (!empty($receiveMessageResponse)) {
-    $changeMessageVisibilityRequest = new ChangeMessageVisibilityRequest();
-    $changeMessageVisibilityRequest->queueName = $queueName;
-    $changeMessageVisibilityRequest->receiptHandle =
-        $receiveMessageResponse[0]->receiptHandle;
-    $changeMessageVisibilityRequest->invisibilitySeconds = 0;
-    $messageClient->changeMessageVisibilitySeconds($changeMessageVisibilityRequest);
-    echo "Change Visibility:\n " .
-        "ReceiptHandle: $changeMessageVisibilityRequest->receiptHandle " .
-        "Time: $changeMessageVisibilityRequest->invisibilitySeconds Seconds\n\n";
-  }
+  $changeMessageVisibilityRequest = new ChangeMessageVisibilityRequest();
+  $changeMessageVisibilityRequest->queueName = $queueName;
+  $changeMessageVisibilityRequest->receiptHandle =
+      $receiveMessageResponse[0]->receiptHandle;
+  $changeMessageVisibilityRequest->invisibilitySeconds = 0;
+  $messageClient->changeMessageVisibilitySeconds($changeMessageVisibilityRequest);
+  echo "Change Visibility:\n " .
+      "ReceiptHandle: $changeMessageVisibilityRequest->receiptHandle " .
+      "Time: $changeMessageVisibilityRequest->invisibilitySeconds Seconds\n\n";
 
   $receiveMessageRequest->maxReceiveMessageWaitSeconds = 5;
   $receiveMessageResponse = $messageClient->receiveMessage($receiveMessageRequest);
@@ -106,11 +135,16 @@ try {
   $response = $queueClient->setQueueQuota($setQueueQuotaRequest);
   print_r($response);
 
+  $deleteTagRequest = new DeleteTagRequest();
+  $deleteTagRequest->queueName = $queueName;
+  $deleteTagRequest->tagName = $tagName;
+  $queueClient->deleteTag($deleteTagRequest);
+
   $deleteQueueRequest = new DeleteQueueRequest();
   $deleteQueueRequest->queueName = $queueName;
   $queueClient->deleteQueue($deleteQueueRequest);
 } catch (GalaxyEmqServiceException $e) {
-  echo "Failed: $e->errMsg: $e->details";
+  echo "Failed: $e->errMsg: $e->details : $e->requestId";
 } catch (TException $e) {
   echo "Failed: " . $e->getMessage() . "\n\n";
 }

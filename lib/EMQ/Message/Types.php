@@ -1372,6 +1372,13 @@ class ReceiveMessageRequest {
    * @var \EMQ\Message\MessageAttribute
    */
   public $attributeValue = null;
+  /**
+   * If this field is not_set/null/empty, default queue tag will be used
+   * 
+   * 
+   * @var string
+   */
+  public $tagName = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -1397,6 +1404,10 @@ class ReceiveMessageRequest {
           'type' => TType::STRUCT,
           'class' => '\EMQ\Message\MessageAttribute',
           ),
+        6 => array(
+          'var' => 'tagName',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -1414,6 +1425,9 @@ class ReceiveMessageRequest {
       }
       if (isset($vals['attributeValue'])) {
         $this->attributeValue = $vals['attributeValue'];
+      }
+      if (isset($vals['tagName'])) {
+        $this->tagName = $vals['tagName'];
       }
     }
   }
@@ -1473,6 +1487,13 @@ class ReceiveMessageRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 6:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tagName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -1512,6 +1533,11 @@ class ReceiveMessageRequest {
       }
       $xfer += $output->writeFieldBegin('attributeValue', TType::STRUCT, 5);
       $xfer += $this->attributeValue->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->tagName !== null) {
+      $xfer += $output->writeFieldBegin('tagName', TType::STRING, 6);
+      $xfer += $output->writeString($this->tagName);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1923,8 +1949,8 @@ class ChangeMessageVisibilityBatchRequestEntry {
   public $receiptHandle = null;
   /**
    * The extra invisibilitySeconds for this message (0s ~ 12hour)
-   *
-   *
+   * 
+   * 
    * @var int
    */
   public $invisibilitySeconds = null;
