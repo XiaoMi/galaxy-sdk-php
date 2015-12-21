@@ -90,7 +90,7 @@ class EMQClient {
         }
         if (!is_null($arguments[0]->attributeName)) {
           self::checkNotEmpty($arguments[0]->attributeName, "attributeName");
-          self::checkMessageAttribute($arguments[0]->attributeValue);
+          self::checkMessageAttribute($arguments[0]->attributeValue, true);
         }
         break;
       case 'getTagInfo':
@@ -119,7 +119,7 @@ class EMQClient {
             Constant::get('GALAXY_EMQ_QUEUE_RECEIVE_WAIT_SECONDS_MAXIMAL'));
         if (!is_null($arguments[0]->attributeName)) {
           self::checkNotEmpty($arguments[0]->attributeName, "attributeName");
-          self::checkMessageAttribute($arguments[0]->attributeValue);
+          self::checkMessageAttribute($arguments[0]->attributeValue, true);
         }
         break;
       case 'changeMessageVisibilitySecondsBatch':
@@ -190,12 +190,12 @@ class EMQClient {
     if (!is_null($entry->messageAttributes)) {
       foreach ($entry->messageAttributes as $name => $attribute) {
         self::checkNotEmpty($name, "attribute name");
-        self::checkMessageAttribute($attribute);
+        self::checkMessageAttribute($attribute, false);
       }
     }
   }
 
-  public static function checkMessageAttribute($attribute) {
+  public static function checkMessageAttribute($attribute, $allow_empty) {
     if (is_null($attribute)) {
       throw new GalaxyEmqServiceException(array(
           'errMsg' => 'Message attribute is null'));
@@ -212,6 +212,8 @@ class EMQClient {
             'errMsg' => 'Invalid user-defined attributes',
             'details' => 'binaryValue cannot be null when type is BINARY'));
       }
+    } else if ($allow_empty && strcasecmp($attribute->type, 'empty') === 0) {
+      return;
     } else {
       throw new GalaxyEmqServiceException(array(
           'errMsg' => 'Invalid user-defined attributes',
