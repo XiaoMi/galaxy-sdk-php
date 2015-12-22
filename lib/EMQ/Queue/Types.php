@@ -633,94 +633,9 @@ class Throughput {
 
 }
 
-class SpaceQuota {
-  static $_TSPEC;
-
-  /**
-   * Queue read qps;
-   * 
-   * 
-   * @var int
-   */
-  public $size = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'size',
-          'type' => TType::I64,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['size'])) {
-        $this->size = $vals['size'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'SpaceQuota';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->size);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('SpaceQuota');
-    if ($this->size !== null) {
-      $xfer += $output->writeFieldBegin('size', TType::I64, 1);
-      $xfer += $output->writeI64($this->size);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
 class QueueQuota {
   static $_TSPEC;
 
-  /**
-   * Queue space quota;
-   * 
-   * 
-   * @var \EMQ\Queue\SpaceQuota
-   */
-  public $spaceQuota = null;
   /**
    * Queue read and qps;
    * 
@@ -732,11 +647,6 @@ class QueueQuota {
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
-        1 => array(
-          'var' => 'spaceQuota',
-          'type' => TType::STRUCT,
-          'class' => '\EMQ\Queue\SpaceQuota',
-          ),
         2 => array(
           'var' => 'throughput',
           'type' => TType::STRUCT,
@@ -745,9 +655,6 @@ class QueueQuota {
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['spaceQuota'])) {
-        $this->spaceQuota = $vals['spaceQuota'];
-      }
       if (isset($vals['throughput'])) {
         $this->throughput = $vals['throughput'];
       }
@@ -773,14 +680,6 @@ class QueueQuota {
       }
       switch ($fid)
       {
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->spaceQuota = new \EMQ\Queue\SpaceQuota();
-            $xfer += $this->spaceQuota->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
         case 2:
           if ($ftype == TType::STRUCT) {
             $this->throughput = new \EMQ\Queue\Throughput();
@@ -802,14 +701,6 @@ class QueueQuota {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('QueueQuota');
-    if ($this->spaceQuota !== null) {
-      if (!is_object($this->spaceQuota)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('spaceQuota', TType::STRUCT, 1);
-      $xfer += $this->spaceQuota->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
     if ($this->throughput !== null) {
       if (!is_object($this->throughput)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);

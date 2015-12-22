@@ -286,13 +286,6 @@ class EMQClient {
     if (is_null($queueQuota)) {
       return;
     }
-    if (is_null($queueQuota->spaceQuota)) {
-      return;
-    }
-    $spaceQuota = $queueQuota->spaceQuota;
-    self::checkParameterRange("spaceQuota", $spaceQuota->size,
-        Constant::get('GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_MINIMAL'),
-        Constant::get('GALAXY_EMQ_QUEUE_MAX_SPACE_QUOTA_MAXIMAL'));
     if (is_null($queueQuota->throughput)) {
       return;
     }

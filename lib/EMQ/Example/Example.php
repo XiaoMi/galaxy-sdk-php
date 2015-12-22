@@ -15,7 +15,6 @@ use EMQ\Queue\CreateTagRequest;
 use EMQ\Queue\DeleteTagRequest;
 use EMQ\Queue\QueueQuota;
 use EMQ\Queue\SetQueueQuotaRequest;
-use EMQ\Queue\SpaceQuota;
 use EMQ\Queue\Throughput;
 use RPC\Auth\Credential;
 use RPC\Auth\UserType;
@@ -46,7 +45,6 @@ try {
   $createQueueRequest = new CreateQueueRequest(array(
       'queueName' => $name,
       'queueQuota' => new QueueQuota(array(
-          'spaceQuota' => new SpaceQuota(array('size' => 100)),
           'throughput' => new Throughput(array('readQps' => 100, 'writeQps' => 100))
       ))));
   $createQueueResponse = $queueClient->createQueue($createQueueRequest);
