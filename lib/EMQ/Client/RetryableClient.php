@@ -58,10 +58,8 @@ class RetryableClient {
   }
 
   private function getRetryType($errorCode, $name) {
-    print "to get retry type.";
     $retryTypeMap = Constant::get('ERROR_RETRY_TYPE');
     if (array_key_exists($errorCode, $retryTypeMap)) {
-      echo "get retry type is:" . $retryTypeMap[$errorCode];
       $getRetryType = $retryTypeMap[$errorCode];
       if ($getRetryType == 2) {
         if ($this->startsWith($name, "deleteMessage") ||
