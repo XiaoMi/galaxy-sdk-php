@@ -1582,6 +1582,14 @@ class ReceiveMessageResponse {
    * - firstReceiveTimestamp
    * - receiveCount
    * 
+   * If the message is received from a dead letter queue,
+   * it has another four attributes:
+   * - sourceQueueName
+   * - sourceTag
+   * - deadTimestamp
+   * - originalMessageID
+   * 
+   * 
    * 
    * @var array
    */

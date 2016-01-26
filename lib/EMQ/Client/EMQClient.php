@@ -171,6 +171,16 @@ class EMQClient {
         self::validateQueueName($arguments[0]->queueName);
         self::checkNotEmpty($arguments[0]->receiptHandle, "receipt handle");
         break;
+      case 'setQueueRedrivePolicy':
+        self::validateQueueName($arguments[0]->queueName);
+        self::checkRedrivePolicyEntry($arguments[0]->redrivePolicy);
+        break;
+      case 'removeQueueRedrivePolicy':
+        self::validateQueueName($arguments[0]->queueName);
+        break;
+      case 'listDeadLetterSourceQueues':
+        self::validateQueueName($arguments[0]->dlqName);
+        break;
     }
   }
 
@@ -193,6 +203,13 @@ class EMQClient {
         self::checkMessageAttribute($attribute, false);
       }
     }
+  }
+
+  public static function checkRedrivePolicyEntry($entry) {
+    self::validateQueueName($entry->dlqName);
+    self::checkParameterRange("redrivePolicy maxReceiveTime", $entry->maxReceiveTime,
+        Constant::get('$GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_MINIMAL'),
+        Constant::get('$GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_MAXIMAL'));
   }
 
   public static function checkMessageAttribute($attribute, $allow_empty) {

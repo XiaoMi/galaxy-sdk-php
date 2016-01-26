@@ -740,6 +740,13 @@ class CreateQueueRequest {
    * @var \EMQ\Queue\QueueQuota
    */
   public $queueQuota = null;
+  /**
+   * Set the queue be a dead letter queue or not;
+   * 
+   * 
+   * @var bool
+   */
+  public $deadLetterQueue = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -758,6 +765,10 @@ class CreateQueueRequest {
           'type' => TType::STRUCT,
           'class' => '\EMQ\Queue\QueueQuota',
           ),
+        4 => array(
+          'var' => 'deadLetterQueue',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -769,6 +780,9 @@ class CreateQueueRequest {
       }
       if (isset($vals['queueQuota'])) {
         $this->queueQuota = $vals['queueQuota'];
+      }
+      if (isset($vals['deadLetterQueue'])) {
+        $this->deadLetterQueue = $vals['deadLetterQueue'];
       }
     }
   }
@@ -815,6 +829,13 @@ class CreateQueueRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 4:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->deadLetterQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -847,6 +868,11 @@ class CreateQueueRequest {
       }
       $xfer += $output->writeFieldBegin('queueQuota', TType::STRUCT, 3);
       $xfer += $this->queueQuota->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deadLetterQueue !== null) {
+      $xfer += $output->writeFieldBegin('deadLetterQueue', TType::BOOL, 4);
+      $xfer += $output->writeBool($this->deadLetterQueue);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -882,6 +908,13 @@ class CreateQueueResponse {
    * @var \EMQ\Queue\QueueQuota
    */
   public $queueQuota = null;
+  /**
+   * The queue is a dead letter queue or not;
+   * 
+   * 
+   * @var bool
+   */
+  public $deadLetterQueue = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -900,6 +933,10 @@ class CreateQueueResponse {
           'type' => TType::STRUCT,
           'class' => '\EMQ\Queue\QueueQuota',
           ),
+        4 => array(
+          'var' => 'deadLetterQueue',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -911,6 +948,9 @@ class CreateQueueResponse {
       }
       if (isset($vals['queueQuota'])) {
         $this->queueQuota = $vals['queueQuota'];
+      }
+      if (isset($vals['deadLetterQueue'])) {
+        $this->deadLetterQueue = $vals['deadLetterQueue'];
       }
     }
   }
@@ -957,6 +997,13 @@ class CreateQueueResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 4:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->deadLetterQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -989,6 +1036,11 @@ class CreateQueueResponse {
       }
       $xfer += $output->writeFieldBegin('queueQuota', TType::STRUCT, 3);
       $xfer += $this->queueQuota->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deadLetterQueue !== null) {
+      $xfer += $output->writeFieldBegin('deadLetterQueue', TType::BOOL, 4);
+      $xfer += $output->writeBool($this->deadLetterQueue);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1590,6 +1642,110 @@ class SetQueueQuotaResponse {
 
 }
 
+class RedrivePolicy {
+  static $_TSPEC;
+
+  /**
+   * The dead letter queue name;
+   * 
+   * 
+   * @var string
+   */
+  public $dlqName = null;
+  /**
+   * The max receive time;
+   * 
+   * 
+   * @var int
+   */
+  public $maxReceiveTime = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'dlqName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'maxReceiveTime',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['dlqName'])) {
+        $this->dlqName = $vals['dlqName'];
+      }
+      if (isset($vals['maxReceiveTime'])) {
+        $this->maxReceiveTime = $vals['maxReceiveTime'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'RedrivePolicy';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->dlqName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->maxReceiveTime);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('RedrivePolicy');
+    if ($this->dlqName !== null) {
+      $xfer += $output->writeFieldBegin('dlqName', TType::STRING, 1);
+      $xfer += $output->writeString($this->dlqName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->maxReceiveTime !== null) {
+      $xfer += $output->writeFieldBegin('maxReceiveTime', TType::I32, 2);
+      $xfer += $output->writeI32($this->maxReceiveTime);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 class GetQueueInfoRequest {
   static $_TSPEC;
 
@@ -1699,6 +1855,20 @@ class GetQueueInfoResponse {
    * @var \EMQ\Queue\QueueQuota
    */
   public $queueQuota = null;
+  /**
+   * Whether the queue is a dead letter queue;
+   * 
+   * 
+   * @var bool
+   */
+  public $isDeadLetterQueue = null;
+  /**
+   * The queue redrive policy, dead letter queue doesn't have redrive policy;
+   * 
+   * 
+   * @var \EMQ\Queue\RedrivePolicy
+   */
+  public $redrivePolicy = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -1722,6 +1892,15 @@ class GetQueueInfoResponse {
           'type' => TType::STRUCT,
           'class' => '\EMQ\Queue\QueueQuota',
           ),
+        5 => array(
+          'var' => 'isDeadLetterQueue',
+          'type' => TType::BOOL,
+          ),
+        6 => array(
+          'var' => 'redrivePolicy',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Queue\RedrivePolicy',
+          ),
         );
     }
     if (is_array($vals)) {
@@ -1736,6 +1915,12 @@ class GetQueueInfoResponse {
       }
       if (isset($vals['queueQuota'])) {
         $this->queueQuota = $vals['queueQuota'];
+      }
+      if (isset($vals['isDeadLetterQueue'])) {
+        $this->isDeadLetterQueue = $vals['isDeadLetterQueue'];
+      }
+      if (isset($vals['redrivePolicy'])) {
+        $this->redrivePolicy = $vals['redrivePolicy'];
       }
     }
   }
@@ -1790,6 +1975,21 @@ class GetQueueInfoResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 5:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->isDeadLetterQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 6:
+          if ($ftype == TType::STRUCT) {
+            $this->redrivePolicy = new \EMQ\Queue\RedrivePolicy();
+            $xfer += $this->redrivePolicy->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -1830,6 +2030,505 @@ class GetQueueInfoResponse {
       }
       $xfer += $output->writeFieldBegin('queueQuota', TType::STRUCT, 4);
       $xfer += $this->queueQuota->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->isDeadLetterQueue !== null) {
+      $xfer += $output->writeFieldBegin('isDeadLetterQueue', TType::BOOL, 5);
+      $xfer += $output->writeBool($this->isDeadLetterQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->redrivePolicy !== null) {
+      if (!is_object($this->redrivePolicy)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('redrivePolicy', TType::STRUCT, 6);
+      $xfer += $this->redrivePolicy->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class SetQueueRedrivePolicyRequest {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $queueName = null;
+  /**
+   * @var \EMQ\Queue\RedrivePolicy
+   */
+  public $redrivePolicy = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'queueName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'redrivePolicy',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Queue\RedrivePolicy',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['queueName'])) {
+        $this->queueName = $vals['queueName'];
+      }
+      if (isset($vals['redrivePolicy'])) {
+        $this->redrivePolicy = $vals['redrivePolicy'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'SetQueueRedrivePolicyRequest';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->queueName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->redrivePolicy = new \EMQ\Queue\RedrivePolicy();
+            $xfer += $this->redrivePolicy->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('SetQueueRedrivePolicyRequest');
+    if ($this->queueName !== null) {
+      $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
+      $xfer += $output->writeString($this->queueName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->redrivePolicy !== null) {
+      if (!is_object($this->redrivePolicy)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('redrivePolicy', TType::STRUCT, 2);
+      $xfer += $this->redrivePolicy->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class SetQueueRedrivePolicyResponse {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $queueName = null;
+  /**
+   * @var \EMQ\Queue\RedrivePolicy
+   */
+  public $redrivePolicy = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'queueName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'redrivePolicy',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Queue\RedrivePolicy',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['queueName'])) {
+        $this->queueName = $vals['queueName'];
+      }
+      if (isset($vals['redrivePolicy'])) {
+        $this->redrivePolicy = $vals['redrivePolicy'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'SetQueueRedrivePolicyResponse';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->queueName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->redrivePolicy = new \EMQ\Queue\RedrivePolicy();
+            $xfer += $this->redrivePolicy->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('SetQueueRedrivePolicyResponse');
+    if ($this->queueName !== null) {
+      $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
+      $xfer += $output->writeString($this->queueName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->redrivePolicy !== null) {
+      if (!is_object($this->redrivePolicy)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('redrivePolicy', TType::STRUCT, 2);
+      $xfer += $this->redrivePolicy->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class RemoveQueueRedrivePolicyRequest {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $queueName = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'queueName',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['queueName'])) {
+        $this->queueName = $vals['queueName'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'RemoveQueueRedrivePolicyRequest';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->queueName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('RemoveQueueRedrivePolicyRequest');
+    if ($this->queueName !== null) {
+      $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
+      $xfer += $output->writeString($this->queueName);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class ListDeadLetterSourceQueuesRequest {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $dlqName = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'dlqName',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['dlqName'])) {
+        $this->dlqName = $vals['dlqName'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ListDeadLetterSourceQueuesRequest';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->dlqName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ListDeadLetterSourceQueuesRequest');
+    if ($this->dlqName !== null) {
+      $xfer += $output->writeFieldBegin('dlqName', TType::STRING, 1);
+      $xfer += $output->writeString($this->dlqName);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class ListDeadLetterSourceQueuesResponse {
+  static $_TSPEC;
+
+  /**
+   * The dead letter queue name;
+   * 
+   * 
+   * @var string
+   */
+  public $dlqName = null;
+  /**
+   * The source queues, only a dead letter queue has source queues;
+   * 
+   * 
+   * @var string[]
+   */
+  public $sourceQueues = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'dlqName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'sourceQueues',
+          'type' => TType::LST,
+          'etype' => TType::STRING,
+          'elem' => array(
+            'type' => TType::STRING,
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['dlqName'])) {
+        $this->dlqName = $vals['dlqName'];
+      }
+      if (isset($vals['sourceQueues'])) {
+        $this->sourceQueues = $vals['sourceQueues'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ListDeadLetterSourceQueuesResponse';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->dlqName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::LST) {
+            $this->sourceQueues = array();
+            $_size9 = 0;
+            $_etype12 = 0;
+            $xfer += $input->readListBegin($_etype12, $_size9);
+            for ($_i13 = 0; $_i13 < $_size9; ++$_i13)
+            {
+              $elem14 = null;
+              $xfer += $input->readString($elem14);
+              $this->sourceQueues []= $elem14;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ListDeadLetterSourceQueuesResponse');
+    if ($this->dlqName !== null) {
+      $xfer += $output->writeFieldBegin('dlqName', TType::STRING, 1);
+      $xfer += $output->writeString($this->dlqName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->sourceQueues !== null) {
+      if (!is_array($this->sourceQueues)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('sourceQueues', TType::LST, 2);
+      {
+        $output->writeListBegin(TType::STRING, count($this->sourceQueues));
+        {
+          foreach ($this->sourceQueues as $iter15)
+          {
+            $xfer += $output->writeString($iter15);
+          }
+        }
+        $output->writeListEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1970,14 +2669,14 @@ class ListQueueResponse {
         case 1:
           if ($ftype == TType::LST) {
             $this->queueName = array();
-            $_size9 = 0;
-            $_etype12 = 0;
-            $xfer += $input->readListBegin($_etype12, $_size9);
-            for ($_i13 = 0; $_i13 < $_size9; ++$_i13)
+            $_size16 = 0;
+            $_etype19 = 0;
+            $xfer += $input->readListBegin($_etype19, $_size16);
+            for ($_i20 = 0; $_i20 < $_size16; ++$_i20)
             {
-              $elem14 = null;
-              $xfer += $input->readString($elem14);
-              $this->queueName []= $elem14;
+              $elem21 = null;
+              $xfer += $input->readString($elem21);
+              $this->queueName []= $elem21;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2005,9 +2704,9 @@ class ListQueueResponse {
       {
         $output->writeListBegin(TType::STRING, count($this->queueName));
         {
-          foreach ($this->queueName as $iter15)
+          foreach ($this->queueName as $iter22)
           {
-            $xfer += $output->writeString($iter15);
+            $xfer += $output->writeString($iter22);
           }
         }
         $output->writeListEnd();
@@ -2692,17 +3391,17 @@ class ListPermissionsResponse {
         case 1:
           if ($ftype == TType::MAP) {
             $this->permissionList = array();
-            $_size16 = 0;
-            $_ktype17 = 0;
-            $_vtype18 = 0;
-            $xfer += $input->readMapBegin($_ktype17, $_vtype18, $_size16);
-            for ($_i20 = 0; $_i20 < $_size16; ++$_i20)
+            $_size23 = 0;
+            $_ktype24 = 0;
+            $_vtype25 = 0;
+            $xfer += $input->readMapBegin($_ktype24, $_vtype25, $_size23);
+            for ($_i27 = 0; $_i27 < $_size23; ++$_i27)
             {
-              $key21 = '';
-              $val22 = 0;
-              $xfer += $input->readString($key21);
-              $xfer += $input->readI32($val22);
-              $this->permissionList[$key21] = $val22;
+              $key28 = '';
+              $val29 = 0;
+              $xfer += $input->readString($key28);
+              $xfer += $input->readI32($val29);
+              $this->permissionList[$key28] = $val29;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -2730,10 +3429,10 @@ class ListPermissionsResponse {
       {
         $output->writeMapBegin(TType::STRING, TType::I32, count($this->permissionList));
         {
-          foreach ($this->permissionList as $kiter23 => $viter24)
+          foreach ($this->permissionList as $kiter30 => $viter31)
           {
-            $xfer += $output->writeString($kiter23);
-            $xfer += $output->writeI32($viter24);
+            $xfer += $output->writeString($kiter30);
+            $xfer += $output->writeI32($viter31);
           }
         }
         $output->writeMapEnd();
@@ -2911,17 +3610,17 @@ class CreateTagRequest {
         case 7:
           if ($ftype == TType::MAP) {
             $this->userAttributes = array();
-            $_size25 = 0;
-            $_ktype26 = 0;
-            $_vtype27 = 0;
-            $xfer += $input->readMapBegin($_ktype26, $_vtype27, $_size25);
-            for ($_i29 = 0; $_i29 < $_size25; ++$_i29)
+            $_size32 = 0;
+            $_ktype33 = 0;
+            $_vtype34 = 0;
+            $xfer += $input->readMapBegin($_ktype33, $_vtype34, $_size32);
+            for ($_i36 = 0; $_i36 < $_size32; ++$_i36)
             {
-              $key30 = '';
-              $val31 = '';
-              $xfer += $input->readString($key30);
-              $xfer += $input->readString($val31);
-              $this->userAttributes[$key30] = $val31;
+              $key37 = '';
+              $val38 = '';
+              $xfer += $input->readString($key37);
+              $xfer += $input->readString($val38);
+              $this->userAttributes[$key37] = $val38;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -2982,10 +3681,10 @@ class CreateTagRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRING, count($this->userAttributes));
         {
-          foreach ($this->userAttributes as $kiter32 => $viter33)
+          foreach ($this->userAttributes as $kiter39 => $viter40)
           {
-            $xfer += $output->writeString($kiter32);
-            $xfer += $output->writeString($viter33);
+            $xfer += $output->writeString($kiter39);
+            $xfer += $output->writeString($viter40);
           }
         }
         $output->writeMapEnd();
@@ -3523,17 +4222,17 @@ class GetTagInfoResponse {
         case 8:
           if ($ftype == TType::MAP) {
             $this->userAttributes = array();
-            $_size34 = 0;
-            $_ktype35 = 0;
-            $_vtype36 = 0;
-            $xfer += $input->readMapBegin($_ktype35, $_vtype36, $_size34);
-            for ($_i38 = 0; $_i38 < $_size34; ++$_i38)
+            $_size41 = 0;
+            $_ktype42 = 0;
+            $_vtype43 = 0;
+            $xfer += $input->readMapBegin($_ktype42, $_vtype43, $_size41);
+            for ($_i45 = 0; $_i45 < $_size41; ++$_i45)
             {
-              $key39 = '';
-              $val40 = '';
-              $xfer += $input->readString($key39);
-              $xfer += $input->readString($val40);
-              $this->userAttributes[$key39] = $val40;
+              $key46 = '';
+              $val47 = '';
+              $xfer += $input->readString($key46);
+              $xfer += $input->readString($val47);
+              $this->userAttributes[$key46] = $val47;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -3602,10 +4301,10 @@ class GetTagInfoResponse {
       {
         $output->writeMapBegin(TType::STRING, TType::STRING, count($this->userAttributes));
         {
-          foreach ($this->userAttributes as $kiter41 => $viter42)
+          foreach ($this->userAttributes as $kiter48 => $viter49)
           {
-            $xfer += $output->writeString($kiter41);
-            $xfer += $output->writeString($viter42);
+            $xfer += $output->writeString($kiter48);
+            $xfer += $output->writeString($viter49);
           }
         }
         $output->writeMapEnd();
@@ -3762,14 +4461,14 @@ class ListTagResponse {
         case 2:
           if ($ftype == TType::LST) {
             $this->tagName = array();
-            $_size43 = 0;
-            $_etype46 = 0;
-            $xfer += $input->readListBegin($_etype46, $_size43);
-            for ($_i47 = 0; $_i47 < $_size43; ++$_i47)
+            $_size50 = 0;
+            $_etype53 = 0;
+            $xfer += $input->readListBegin($_etype53, $_size50);
+            for ($_i54 = 0; $_i54 < $_size50; ++$_i54)
             {
-              $elem48 = null;
-              $xfer += $input->readString($elem48);
-              $this->tagName []= $elem48;
+              $elem55 = null;
+              $xfer += $input->readString($elem55);
+              $this->tagName []= $elem55;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -3802,9 +4501,9 @@ class ListTagResponse {
       {
         $output->writeListBegin(TType::STRING, count($this->tagName));
         {
-          foreach ($this->tagName as $iter49)
+          foreach ($this->tagName as $iter56)
           {
-            $xfer += $output->writeString($iter49);
+            $xfer += $output->writeString($iter56);
           }
         }
         $output->writeListEnd();
@@ -4017,17 +4716,17 @@ class QueryMetricRequest {
         case 5:
           if ($ftype == TType::MAP) {
             $this->tags = array();
-            $_size50 = 0;
-            $_ktype51 = 0;
-            $_vtype52 = 0;
-            $xfer += $input->readMapBegin($_ktype51, $_vtype52, $_size50);
-            for ($_i54 = 0; $_i54 < $_size50; ++$_i54)
+            $_size57 = 0;
+            $_ktype58 = 0;
+            $_vtype59 = 0;
+            $xfer += $input->readMapBegin($_ktype58, $_vtype59, $_size57);
+            for ($_i61 = 0; $_i61 < $_size57; ++$_i61)
             {
-              $key55 = '';
-              $val56 = '';
-              $xfer += $input->readString($key55);
-              $xfer += $input->readString($val56);
-              $this->tags[$key55] = $val56;
+              $key62 = '';
+              $val63 = '';
+              $xfer += $input->readString($key62);
+              $xfer += $input->readString($val63);
+              $this->tags[$key62] = $val63;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4110,10 +4809,10 @@ class QueryMetricRequest {
       {
         $output->writeMapBegin(TType::STRING, TType::STRING, count($this->tags));
         {
-          foreach ($this->tags as $kiter57 => $viter58)
+          foreach ($this->tags as $kiter64 => $viter65)
           {
-            $xfer += $output->writeString($kiter57);
-            $xfer += $output->writeString($viter58);
+            $xfer += $output->writeString($kiter64);
+            $xfer += $output->writeString($viter65);
           }
         }
         $output->writeMapEnd();
@@ -4252,17 +4951,17 @@ class TimeSeriesData {
         case 2:
           if ($ftype == TType::MAP) {
             $this->tags = array();
-            $_size59 = 0;
-            $_ktype60 = 0;
-            $_vtype61 = 0;
-            $xfer += $input->readMapBegin($_ktype60, $_vtype61, $_size59);
-            for ($_i63 = 0; $_i63 < $_size59; ++$_i63)
+            $_size66 = 0;
+            $_ktype67 = 0;
+            $_vtype68 = 0;
+            $xfer += $input->readMapBegin($_ktype67, $_vtype68, $_size66);
+            for ($_i70 = 0; $_i70 < $_size66; ++$_i70)
             {
-              $key64 = '';
-              $val65 = '';
-              $xfer += $input->readString($key64);
-              $xfer += $input->readString($val65);
-              $this->tags[$key64] = $val65;
+              $key71 = '';
+              $val72 = '';
+              $xfer += $input->readString($key71);
+              $xfer += $input->readString($val72);
+              $this->tags[$key71] = $val72;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4272,17 +4971,17 @@ class TimeSeriesData {
         case 3:
           if ($ftype == TType::MAP) {
             $this->data = array();
-            $_size66 = 0;
-            $_ktype67 = 0;
-            $_vtype68 = 0;
-            $xfer += $input->readMapBegin($_ktype67, $_vtype68, $_size66);
-            for ($_i70 = 0; $_i70 < $_size66; ++$_i70)
+            $_size73 = 0;
+            $_ktype74 = 0;
+            $_vtype75 = 0;
+            $xfer += $input->readMapBegin($_ktype74, $_vtype75, $_size73);
+            for ($_i77 = 0; $_i77 < $_size73; ++$_i77)
             {
-              $key71 = 0;
-              $val72 = 0.0;
-              $xfer += $input->readI64($key71);
-              $xfer += $input->readDouble($val72);
-              $this->data[$key71] = $val72;
+              $key78 = 0;
+              $val79 = 0.0;
+              $xfer += $input->readI64($key78);
+              $xfer += $input->readDouble($val79);
+              $this->data[$key78] = $val79;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4315,10 +5014,10 @@ class TimeSeriesData {
       {
         $output->writeMapBegin(TType::STRING, TType::STRING, count($this->tags));
         {
-          foreach ($this->tags as $kiter73 => $viter74)
+          foreach ($this->tags as $kiter80 => $viter81)
           {
-            $xfer += $output->writeString($kiter73);
-            $xfer += $output->writeString($viter74);
+            $xfer += $output->writeString($kiter80);
+            $xfer += $output->writeString($viter81);
           }
         }
         $output->writeMapEnd();
@@ -4333,10 +5032,10 @@ class TimeSeriesData {
       {
         $output->writeMapBegin(TType::I64, TType::DOUBLE, count($this->data));
         {
-          foreach ($this->data as $kiter75 => $viter76)
+          foreach ($this->data as $kiter82 => $viter83)
           {
-            $xfer += $output->writeI64($kiter75);
-            $xfer += $output->writeDouble($viter76);
+            $xfer += $output->writeI64($kiter82);
+            $xfer += $output->writeDouble($viter83);
           }
         }
         $output->writeMapEnd();

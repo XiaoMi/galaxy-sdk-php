@@ -54,6 +54,9 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $GALAXY_EMQ_QUEUE_WRITE_QPS_DEFAULT;
   static protected $GALAXY_EMQ_QUEUE_WRITE_QPS_MINIMAL;
   static protected $GALAXY_EMQ_QUEUE_WRITE_QPS_MAXIMAL;
+  static protected $GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_DEFAULT;
+  static protected $GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_MINIMAL;
+  static protected $GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_MAXIMAL;
 
   static protected function init_GALAXY_EMQ_QUEUE_DELAY_SECONDS_DEFAULT() {
     return     /**
@@ -233,6 +236,21 @@ final class Constant extends \Thrift\Type\TConstant {
 
   static protected function init_GALAXY_EMQ_QUEUE_WRITE_QPS_MAXIMAL() {
     return 100000;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_DEFAULT() {
+    return     /**
+     * queue redrive policy max receive time, default 2 (1 ~ 100)
+     */
+2;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_MINIMAL() {
+    return 1;
+  }
+
+  static protected function init_GALAXY_EMQ_QUEUE_REDRIVE_POLICY_MAX_RECEIVE_TIME_MAXIMAL() {
+    return 100;
   }
 }
 
