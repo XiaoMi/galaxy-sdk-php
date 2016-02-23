@@ -47,6 +47,11 @@ class EMQClientFactory {
   const MESSAGE_SERVICE_PATH = "/v1/api/message";
 
   /**
+   * Statistics操作RPC路径
+   */
+  const STATISTICS_SERVICE_PATH = "/v1/api/statistics";
+
+  /**
    * 未设置retry或者未设置retry的次数时, retry次数的默认值
    */
   const DEFAULT_MAX_RETRY_TIME = 3;
@@ -111,6 +116,32 @@ class EMQClientFactory {
       $maxRetry = self::DEFAULT_MAX_RETRY_TIME) {
     $client = $this->getClient('EMQ\Message\MessageServiceClient',
         $endpoint . self::MESSAGE_SERVICE_PATH, $timeout, $connTimeout);
+    $retryClient = new RetryableClient($client, $this->httpClient_, $isRetry, $maxRetry);
+    return new EMQClient($retryClient);
+  }
+
+  /**
+   * @return \EMQ\Statistics\StatisticsServiceClient
+   */
+  public function newDefaultStatisticsClient() {
+    return $this->newStatisticsClient(self::DEFAULT_SECURE_SERVICE_ENDPOINT);
+  }
+
+  /**
+   * @param string $endpoint
+   * @param int $timeout
+   * @param int $connTimeout
+   * @param bool $isRetry
+   * @param int $maxRetry
+   * @return EMQClient
+   */
+  public function newStatisticsClient($endpoint,
+      $timeout = self::DEFAULT_CLIENT_TIMEOUT,
+      $connTimeout = self::DEFAULT_CLIENT_CONN_TIMEOUT,
+      $isRetry = false,
+      $maxRetry = self::DEFAULT_MAX_RETRY_TIME) {
+    $client = $this->getClient('\EMQ\Statistics\StatisticsServiceClient',
+        $endpoint . self::STATISTICS_SERVICE_PATH, $timeout, $connTimeout);
     $retryClient = new RetryableClient($client, $this->httpClient_, $isRetry, $maxRetry);
     return new EMQClient($retryClient);
   }
