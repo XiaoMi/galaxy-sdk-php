@@ -101,6 +101,14 @@ interface TableServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function commitConsumedPartitionEdit(\SDS\Table\EditCommitRequest $request);
+  /**
+   * 用于重建二级索引， 当表中存在与request相同的记录，成功写入
+   * 
+   * @param \SDS\Table\PutRequest $request
+   * @return \SDS\Table\PutResult
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function putToRebuildIndex(\SDS\Table\PutRequest $request);
 }
 
 class TableServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Table\TableServiceIf {
@@ -646,6 +654,60 @@ class TableServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\T
       throw $result->se;
     }
     throw new \Exception("commitConsumedPartitionEdit failed: unknown result");
+  }
+
+  public function putToRebuildIndex(\SDS\Table\PutRequest $request)
+  {
+    $this->send_putToRebuildIndex($request);
+    return $this->recv_putToRebuildIndex();
+  }
+
+  public function send_putToRebuildIndex(\SDS\Table\PutRequest $request)
+  {
+    $args = new \SDS\Table\TableService_putToRebuildIndex_args();
+    $args->request = $request;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'putToRebuildIndex', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('putToRebuildIndex', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_putToRebuildIndex()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Table\TableService_putToRebuildIndex_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Table\TableService_putToRebuildIndex_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("putToRebuildIndex failed: unknown result");
   }
 
 }
@@ -2482,6 +2544,191 @@ class TableService_commitConsumedPartitionEdit_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('TableService_commitConsumedPartitionEdit_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class TableService_putToRebuildIndex_args {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Table\PutRequest
+   */
+  public $request = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'request',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\PutRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['request'])) {
+        $this->request = $vals['request'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'TableService_putToRebuildIndex_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->request = new \SDS\Table\PutRequest();
+            $xfer += $this->request->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('TableService_putToRebuildIndex_args');
+    if ($this->request !== null) {
+      if (!is_object($this->request)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 1);
+      $xfer += $this->request->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class TableService_putToRebuildIndex_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Table\PutResult
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\PutResult',
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'TableService_putToRebuildIndex_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \SDS\Table\PutResult();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('TableService_putToRebuildIndex_result');
     if ($this->success !== null) {
       if (!is_object($this->success)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);

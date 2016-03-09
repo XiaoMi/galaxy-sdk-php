@@ -2077,6 +2077,242 @@ class TableSchema {
 }
 
 /**
+ * 远程复制吞吐量配额
+ */
+class ReplicationProvisionThroughput {
+  static $_TSPEC;
+
+  /**
+   * @var int
+   */
+  public $consumeCapacity = null;
+  /**
+   * @var int
+   */
+  public $commitCapacity = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'consumeCapacity',
+          'type' => TType::I64,
+          ),
+        2 => array(
+          'var' => 'commitCapacity',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['consumeCapacity'])) {
+        $this->consumeCapacity = $vals['consumeCapacity'];
+      }
+      if (isset($vals['commitCapacity'])) {
+        $this->commitCapacity = $vals['commitCapacity'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ReplicationProvisionThroughput';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->consumeCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->commitCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ReplicationProvisionThroughput');
+    if ($this->consumeCapacity !== null) {
+      $xfer += $output->writeFieldBegin('consumeCapacity', TType::I64, 1);
+      $xfer += $output->writeI64($this->consumeCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->commitCapacity !== null) {
+      $xfer += $output->writeFieldBegin('commitCapacity', TType::I64, 2);
+      $xfer += $output->writeI64($this->commitCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
+ * 远程复制定义
+ */
+class ReplicationSpec {
+  static $_TSPEC;
+
+  /**
+   * 是否做增量复制
+   * 
+   * @var bool
+   */
+  public $enableReplication = null;
+  /**
+   * 吞吐量配额
+   * 
+   * @var \SDS\Table\ReplicationProvisionThroughput
+   */
+  public $throughput = null;
+  /**
+   * 订阅者的最大数量
+   * 
+   * @var int
+   */
+  public $maxSubscribers = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'enableReplication',
+          'type' => TType::BOOL,
+          ),
+        2 => array(
+          'var' => 'throughput',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\ReplicationProvisionThroughput',
+          ),
+        3 => array(
+          'var' => 'maxSubscribers',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['enableReplication'])) {
+        $this->enableReplication = $vals['enableReplication'];
+      }
+      if (isset($vals['throughput'])) {
+        $this->throughput = $vals['throughput'];
+      }
+      if (isset($vals['maxSubscribers'])) {
+        $this->maxSubscribers = $vals['maxSubscribers'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ReplicationSpec';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enableReplication);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->throughput = new \SDS\Table\ReplicationProvisionThroughput();
+            $xfer += $this->throughput->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->maxSubscribers);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ReplicationSpec');
+    if ($this->enableReplication !== null) {
+      $xfer += $output->writeFieldBegin('enableReplication', TType::BOOL, 1);
+      $xfer += $output->writeBool($this->enableReplication);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->throughput !== null) {
+      if (!is_object($this->throughput)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('throughput', TType::STRUCT, 2);
+      $xfer += $this->throughput->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->maxSubscribers !== null) {
+      $xfer += $output->writeFieldBegin('maxSubscribers', TType::I32, 3);
+      $xfer += $output->writeI32($this->maxSubscribers);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
  * 表元信息
  */
 class TableMetadata {
@@ -2532,242 +2768,6 @@ class TableSpec {
       }
       $xfer += $output->writeFieldBegin('metadata', TType::STRUCT, 2);
       $xfer += $this->metadata->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-/**
- * 远程复制吞吐量配额
- */
-class ReplicationProvisionThroughput {
-  static $_TSPEC;
-
-  /**
-   * @var int
-   */
-  public $consumeCapacity = null;
-  /**
-   * @var int
-   */
-  public $commitCapacity = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'consumeCapacity',
-          'type' => TType::I64,
-          ),
-        2 => array(
-          'var' => 'commitCapacity',
-          'type' => TType::I64,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['consumeCapacity'])) {
-        $this->consumeCapacity = $vals['consumeCapacity'];
-      }
-      if (isset($vals['commitCapacity'])) {
-        $this->commitCapacity = $vals['commitCapacity'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'ReplicationProvisionThroughput';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->consumeCapacity);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::I64) {
-            $xfer += $input->readI64($this->commitCapacity);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('ReplicationProvisionThroughput');
-    if ($this->consumeCapacity !== null) {
-      $xfer += $output->writeFieldBegin('consumeCapacity', TType::I64, 1);
-      $xfer += $output->writeI64($this->consumeCapacity);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->commitCapacity !== null) {
-      $xfer += $output->writeFieldBegin('commitCapacity', TType::I64, 2);
-      $xfer += $output->writeI64($this->commitCapacity);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-/**
- * 远程复制定义
- */
-class ReplicationSpec {
-  static $_TSPEC;
-
-  /**
-   * 是否做增量复制
-   * 
-   * @var bool
-   */
-  public $enableReplication = null;
-  /**
-   * 吞吐量配额
-   * 
-   * @var \SDS\Table\ReplicationProvisionThroughput
-   */
-  public $throughput = null;
-  /**
-   * 订阅者的最大数量
-   * 
-   * @var int
-   */
-  public $maxSubscribers = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'enableReplication',
-          'type' => TType::BOOL,
-          ),
-        2 => array(
-          'var' => 'throughput',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\ReplicationProvisionThroughput',
-          ),
-        3 => array(
-          'var' => 'maxSubscribers',
-          'type' => TType::I32,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['enableReplication'])) {
-        $this->enableReplication = $vals['enableReplication'];
-      }
-      if (isset($vals['throughput'])) {
-        $this->throughput = $vals['throughput'];
-      }
-      if (isset($vals['maxSubscribers'])) {
-        $this->maxSubscribers = $vals['maxSubscribers'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'ReplicationSpec';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->enableReplication);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRUCT) {
-            $this->throughput = new \SDS\Table\ReplicationProvisionThroughput();
-            $xfer += $this->throughput->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->maxSubscribers);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('ReplicationSpec');
-    if ($this->enableReplication !== null) {
-      $xfer += $output->writeFieldBegin('enableReplication', TType::BOOL, 1);
-      $xfer += $output->writeBool($this->enableReplication);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->throughput !== null) {
-      if (!is_object($this->throughput)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('throughput', TType::STRUCT, 2);
-      $xfer += $this->throughput->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->maxSubscribers !== null) {
-      $xfer += $output->writeFieldBegin('maxSubscribers', TType::I32, 3);
-      $xfer += $output->writeI32($this->maxSubscribers);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
