@@ -1060,7 +1060,7 @@ class AlertPolicy {
 
 }
 
-class AddAlertPolicyRequest {
+class AddQueueAlertPolicyRequest {
   static $_TSPEC;
 
   /**
@@ -1103,7 +1103,7 @@ class AddAlertPolicyRequest {
   }
 
   public function getName() {
-    return 'AddAlertPolicyRequest';
+    return 'AddQueueAlertPolicyRequest';
   }
 
   public function read($input)
@@ -1148,7 +1148,7 @@ class AddAlertPolicyRequest {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('AddAlertPolicyRequest');
+    $xfer += $output->writeStructBegin('AddQueueAlertPolicyRequest');
     if ($this->queueName !== null) {
       $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
       $xfer += $output->writeString($this->queueName);
@@ -1169,7 +1169,7 @@ class AddAlertPolicyRequest {
 
 }
 
-class DeleteAlertPolicyRequest {
+class DeleteQueueAlertPolicyRequest {
   static $_TSPEC;
 
   /**
@@ -1212,7 +1212,7 @@ class DeleteAlertPolicyRequest {
   }
 
   public function getName() {
-    return 'DeleteAlertPolicyRequest';
+    return 'DeleteQueueAlertPolicyRequest';
   }
 
   public function read($input)
@@ -1257,7 +1257,7 @@ class DeleteAlertPolicyRequest {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('DeleteAlertPolicyRequest');
+    $xfer += $output->writeStructBegin('DeleteQueueAlertPolicyRequest');
     if ($this->queueName !== null) {
       $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
       $xfer += $output->writeString($this->queueName);

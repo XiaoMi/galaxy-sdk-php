@@ -64,18 +64,18 @@ interface StatisticsServiceIf extends \EMQ\Common\EMQBaseServiceIf {
    * Add an alert policy for queue;
    * 
    * 
-   * @param \EMQ\Statistics\AddAlertPolicyRequest $request
+   * @param \EMQ\Statistics\AddQueueAlertPolicyRequest $request
    * @throws \EMQ\Common\GalaxyEmqServiceException
    */
-  public function addQueueAlertPolicy(\EMQ\Statistics\AddAlertPolicyRequest $request);
+  public function addQueueAlertPolicy(\EMQ\Statistics\AddQueueAlertPolicyRequest $request);
   /**
    * Delete an alert policy for queue;
    * 
    * 
-   * @param \EMQ\Statistics\DeleteAlertPolicyRequest $request
+   * @param \EMQ\Statistics\DeleteQueueAlertPolicyRequest $request
    * @throws \EMQ\Common\GalaxyEmqServiceException
    */
-  public function deleteQueueAlertPolicy(\EMQ\Statistics\DeleteAlertPolicyRequest $request);
+  public function deleteQueueAlertPolicy(\EMQ\Statistics\DeleteQueueAlertPolicyRequest $request);
   /**
    * Clear alert policies for queue;
    * 
@@ -373,13 +373,13 @@ class StatisticsServiceClient extends \EMQ\Common\EMQBaseServiceClient implement
     throw new \Exception("getUserInfo failed: unknown result");
   }
 
-  public function addQueueAlertPolicy(\EMQ\Statistics\AddAlertPolicyRequest $request)
+  public function addQueueAlertPolicy(\EMQ\Statistics\AddQueueAlertPolicyRequest $request)
   {
     $this->send_addQueueAlertPolicy($request);
     $this->recv_addQueueAlertPolicy();
   }
 
-  public function send_addQueueAlertPolicy(\EMQ\Statistics\AddAlertPolicyRequest $request)
+  public function send_addQueueAlertPolicy(\EMQ\Statistics\AddQueueAlertPolicyRequest $request)
   {
     $args = new \EMQ\Statistics\StatisticsService_addQueueAlertPolicy_args();
     $args->request = $request;
@@ -424,13 +424,13 @@ class StatisticsServiceClient extends \EMQ\Common\EMQBaseServiceClient implement
     return;
   }
 
-  public function deleteQueueAlertPolicy(\EMQ\Statistics\DeleteAlertPolicyRequest $request)
+  public function deleteQueueAlertPolicy(\EMQ\Statistics\DeleteQueueAlertPolicyRequest $request)
   {
     $this->send_deleteQueueAlertPolicy($request);
     $this->recv_deleteQueueAlertPolicy();
   }
 
-  public function send_deleteQueueAlertPolicy(\EMQ\Statistics\DeleteAlertPolicyRequest $request)
+  public function send_deleteQueueAlertPolicy(\EMQ\Statistics\DeleteQueueAlertPolicyRequest $request)
   {
     $args = new \EMQ\Statistics\StatisticsService_deleteQueueAlertPolicy_args();
     $args->request = $request;
@@ -1511,7 +1511,7 @@ class StatisticsService_addQueueAlertPolicy_args {
   static $_TSPEC;
 
   /**
-   * @var \EMQ\Statistics\AddAlertPolicyRequest
+   * @var \EMQ\Statistics\AddQueueAlertPolicyRequest
    */
   public $request = null;
 
@@ -1521,7 +1521,7 @@ class StatisticsService_addQueueAlertPolicy_args {
         1 => array(
           'var' => 'request',
           'type' => TType::STRUCT,
-          'class' => '\EMQ\Statistics\AddAlertPolicyRequest',
+          'class' => '\EMQ\Statistics\AddQueueAlertPolicyRequest',
           ),
         );
     }
@@ -1553,7 +1553,7 @@ class StatisticsService_addQueueAlertPolicy_args {
       {
         case 1:
           if ($ftype == TType::STRUCT) {
-            $this->request = new \EMQ\Statistics\AddAlertPolicyRequest();
+            $this->request = new \EMQ\Statistics\AddQueueAlertPolicyRequest();
             $xfer += $this->request->read($input);
           } else {
             $xfer += $input->skip($ftype);
@@ -1668,7 +1668,7 @@ class StatisticsService_deleteQueueAlertPolicy_args {
   static $_TSPEC;
 
   /**
-   * @var \EMQ\Statistics\DeleteAlertPolicyRequest
+   * @var \EMQ\Statistics\DeleteQueueAlertPolicyRequest
    */
   public $request = null;
 
@@ -1678,7 +1678,7 @@ class StatisticsService_deleteQueueAlertPolicy_args {
         1 => array(
           'var' => 'request',
           'type' => TType::STRUCT,
-          'class' => '\EMQ\Statistics\DeleteAlertPolicyRequest',
+          'class' => '\EMQ\Statistics\DeleteQueueAlertPolicyRequest',
           ),
         );
     }
@@ -1710,7 +1710,7 @@ class StatisticsService_deleteQueueAlertPolicy_args {
       {
         case 1:
           if ($ftype == TType::STRUCT) {
-            $this->request = new \EMQ\Statistics\DeleteAlertPolicyRequest();
+            $this->request = new \EMQ\Statistics\DeleteQueueAlertPolicyRequest();
             $xfer += $this->request->read($input);
           } else {
             $xfer += $input->skip($ftype);

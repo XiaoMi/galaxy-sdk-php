@@ -43,6 +43,11 @@ class EMQClient {
       case 'queryPermission':
       case 'listPermission':
       case 'listTag':
+      case 'addQueueAlertPolicy':
+      case 'deleteQueueAlertPolicy':
+      case 'listQueueAlertPolicies':
+      case 'setQueueDailyStatisticsState':
+      case 'getQueueDailyStatisticsState':
         self::validateQueueName($arguments[0]->queueName);
         break;
       case 'setQueueAttributes':
