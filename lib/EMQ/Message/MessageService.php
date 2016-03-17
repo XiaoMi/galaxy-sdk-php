@@ -78,6 +78,23 @@ interface MessageServiceIf extends \EMQ\Common\EMQBaseServiceIf {
    * @throws \EMQ\Common\GalaxyEmqServiceException
    */
   public function deleteMessageBatch(\EMQ\Message\DeleteMessageBatchRequest $deleteMessageBatchRequest);
+  /**
+   * Dead message;
+   * 
+   * 
+   * @param \EMQ\Message\DeadMessageRequest $deadMessageRequest
+   * @throws \EMQ\Common\GalaxyEmqServiceException
+   */
+  public function deadMessage(\EMQ\Message\DeadMessageRequest $deadMessageRequest);
+  /**
+   * Dead message batch;
+   * 
+   * 
+   * @param \EMQ\Message\DeadMessageBatchRequest $deadMessageBatchRequest
+   * @return \EMQ\Message\DeadMessageBatchResponse
+   * @throws \EMQ\Common\GalaxyEmqServiceException
+   */
+  public function deadMessageBatch(\EMQ\Message\DeadMessageBatchRequest $deadMessageBatchRequest);
 }
 
 class MessageServiceClient extends \EMQ\Common\EMQBaseServiceClient implements \EMQ\Message\MessageServiceIf {
@@ -455,6 +472,111 @@ class MessageServiceClient extends \EMQ\Common\EMQBaseServiceClient implements \
       throw $result->e;
     }
     throw new \Exception("deleteMessageBatch failed: unknown result");
+  }
+
+  public function deadMessage(\EMQ\Message\DeadMessageRequest $deadMessageRequest)
+  {
+    $this->send_deadMessage($deadMessageRequest);
+    $this->recv_deadMessage();
+  }
+
+  public function send_deadMessage(\EMQ\Message\DeadMessageRequest $deadMessageRequest)
+  {
+    $args = new \EMQ\Message\MessageService_deadMessage_args();
+    $args->deadMessageRequest = $deadMessageRequest;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'deadMessage', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('deadMessage', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_deadMessage()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\EMQ\Message\MessageService_deadMessage_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \EMQ\Message\MessageService_deadMessage_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->e !== null) {
+      throw $result->e;
+    }
+    return;
+  }
+
+  public function deadMessageBatch(\EMQ\Message\DeadMessageBatchRequest $deadMessageBatchRequest)
+  {
+    $this->send_deadMessageBatch($deadMessageBatchRequest);
+    return $this->recv_deadMessageBatch();
+  }
+
+  public function send_deadMessageBatch(\EMQ\Message\DeadMessageBatchRequest $deadMessageBatchRequest)
+  {
+    $args = new \EMQ\Message\MessageService_deadMessageBatch_args();
+    $args->deadMessageBatchRequest = $deadMessageBatchRequest;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'deadMessageBatch', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('deadMessageBatch', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_deadMessageBatch()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\EMQ\Message\MessageService_deadMessageBatch_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \EMQ\Message\MessageService_deadMessageBatch_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->e !== null) {
+      throw $result->e;
+    }
+    throw new \Exception("deadMessageBatch failed: unknown result");
   }
 
 }
@@ -974,15 +1096,15 @@ class MessageService_receiveMessage_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size99 = 0;
-            $_etype102 = 0;
-            $xfer += $input->readListBegin($_etype102, $_size99);
-            for ($_i103 = 0; $_i103 < $_size99; ++$_i103)
+            $_size120 = 0;
+            $_etype123 = 0;
+            $xfer += $input->readListBegin($_etype123, $_size120);
+            for ($_i124 = 0; $_i124 < $_size120; ++$_i124)
             {
-              $elem104 = null;
-              $elem104 = new \EMQ\Message\ReceiveMessageResponse();
-              $xfer += $elem104->read($input);
-              $this->success []= $elem104;
+              $elem125 = null;
+              $elem125 = new \EMQ\Message\ReceiveMessageResponse();
+              $xfer += $elem125->read($input);
+              $this->success []= $elem125;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -1018,9 +1140,9 @@ class MessageService_receiveMessage_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter105)
+          foreach ($this->success as $iter126)
           {
-            $xfer += $iter105->write($output);
+            $xfer += $iter126->write($output);
           }
         }
         $output->writeListEnd();
@@ -1703,6 +1825,348 @@ class MessageService_deleteMessageBatch_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('MessageService_deleteMessageBatch_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->e !== null) {
+      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
+      $xfer += $this->e->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class MessageService_deadMessage_args {
+  static $_TSPEC;
+
+  /**
+   * @var \EMQ\Message\DeadMessageRequest
+   */
+  public $deadMessageRequest = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'deadMessageRequest',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Message\DeadMessageRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['deadMessageRequest'])) {
+        $this->deadMessageRequest = $vals['deadMessageRequest'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MessageService_deadMessage_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->deadMessageRequest = new \EMQ\Message\DeadMessageRequest();
+            $xfer += $this->deadMessageRequest->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MessageService_deadMessage_args');
+    if ($this->deadMessageRequest !== null) {
+      if (!is_object($this->deadMessageRequest)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('deadMessageRequest', TType::STRUCT, 1);
+      $xfer += $this->deadMessageRequest->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class MessageService_deadMessage_result {
+  static $_TSPEC;
+
+  /**
+   * @var \EMQ\Common\GalaxyEmqServiceException
+   */
+  public $e = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'e',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Common\GalaxyEmqServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['e'])) {
+        $this->e = $vals['e'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MessageService_deadMessage_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->e = new \EMQ\Common\GalaxyEmqServiceException();
+            $xfer += $this->e->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MessageService_deadMessage_result');
+    if ($this->e !== null) {
+      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
+      $xfer += $this->e->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class MessageService_deadMessageBatch_args {
+  static $_TSPEC;
+
+  /**
+   * @var \EMQ\Message\DeadMessageBatchRequest
+   */
+  public $deadMessageBatchRequest = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'deadMessageBatchRequest',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Message\DeadMessageBatchRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['deadMessageBatchRequest'])) {
+        $this->deadMessageBatchRequest = $vals['deadMessageBatchRequest'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MessageService_deadMessageBatch_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->deadMessageBatchRequest = new \EMQ\Message\DeadMessageBatchRequest();
+            $xfer += $this->deadMessageBatchRequest->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MessageService_deadMessageBatch_args');
+    if ($this->deadMessageBatchRequest !== null) {
+      if (!is_object($this->deadMessageBatchRequest)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('deadMessageBatchRequest', TType::STRUCT, 1);
+      $xfer += $this->deadMessageBatchRequest->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class MessageService_deadMessageBatch_result {
+  static $_TSPEC;
+
+  /**
+   * @var \EMQ\Message\DeadMessageBatchResponse
+   */
+  public $success = null;
+  /**
+   * @var \EMQ\Common\GalaxyEmqServiceException
+   */
+  public $e = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Message\DeadMessageBatchResponse',
+          ),
+        1 => array(
+          'var' => 'e',
+          'type' => TType::STRUCT,
+          'class' => '\EMQ\Common\GalaxyEmqServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['e'])) {
+        $this->e = $vals['e'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MessageService_deadMessageBatch_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \EMQ\Message\DeadMessageBatchResponse();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->e = new \EMQ\Common\GalaxyEmqServiceException();
+            $xfer += $this->e->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MessageService_deadMessageBatch_result');
     if ($this->success !== null) {
       if (!is_object($this->success)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);

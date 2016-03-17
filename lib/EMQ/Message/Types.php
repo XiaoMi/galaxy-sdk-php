@@ -1588,6 +1588,7 @@ class ReceiveMessageResponse {
    * - sourceTag
    * - deadTimestamp
    * - originalMessageID
+   * - originalReceiveCount
    * 
    * 
    * 
@@ -2800,6 +2801,479 @@ class DeleteMessageBatchResponse {
           foreach ($this->failed as $iter98)
           {
             $xfer += $iter98->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class DeadMessageRequest {
+  static $_TSPEC;
+
+  /**
+   * Queue name;
+   * 
+   * 
+   * @var string
+   */
+  public $queueName = null;
+  /**
+   * receipt handle of message to die;
+   * 
+   * 
+   * @var string
+   */
+  public $receiptHandle = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'queueName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'receiptHandle',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['queueName'])) {
+        $this->queueName = $vals['queueName'];
+      }
+      if (isset($vals['receiptHandle'])) {
+        $this->receiptHandle = $vals['receiptHandle'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'DeadMessageRequest';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->queueName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->receiptHandle);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('DeadMessageRequest');
+    if ($this->queueName !== null) {
+      $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
+      $xfer += $output->writeString($this->queueName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->receiptHandle !== null) {
+      $xfer += $output->writeFieldBegin('receiptHandle', TType::STRING, 2);
+      $xfer += $output->writeString($this->receiptHandle);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class DeadMessageBatchRequestEntry {
+  static $_TSPEC;
+
+  /**
+   * receipt handle of message to die;
+   * 
+   * 
+   * @var string
+   */
+  public $receiptHandle = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'receiptHandle',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['receiptHandle'])) {
+        $this->receiptHandle = $vals['receiptHandle'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'DeadMessageBatchRequestEntry';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->receiptHandle);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('DeadMessageBatchRequestEntry');
+    if ($this->receiptHandle !== null) {
+      $xfer += $output->writeFieldBegin('receiptHandle', TType::STRING, 1);
+      $xfer += $output->writeString($this->receiptHandle);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class DeadMessageBatchRequest {
+  static $_TSPEC;
+
+  /**
+   * Queue name;
+   * 
+   * 
+   * @var string
+   */
+  public $queueName = null;
+  /**
+   * List of DeadMessageBatchRequestEntry;
+   * 
+   * 
+   * @var \EMQ\Message\DeadMessageBatchRequestEntry[]
+   */
+  public $deadMessageBatchRequestEntryList = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'queueName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'deadMessageBatchRequestEntryList',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\EMQ\Message\DeadMessageBatchRequestEntry',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['queueName'])) {
+        $this->queueName = $vals['queueName'];
+      }
+      if (isset($vals['deadMessageBatchRequestEntryList'])) {
+        $this->deadMessageBatchRequestEntryList = $vals['deadMessageBatchRequestEntryList'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'DeadMessageBatchRequest';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->queueName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::LST) {
+            $this->deadMessageBatchRequestEntryList = array();
+            $_size99 = 0;
+            $_etype102 = 0;
+            $xfer += $input->readListBegin($_etype102, $_size99);
+            for ($_i103 = 0; $_i103 < $_size99; ++$_i103)
+            {
+              $elem104 = null;
+              $elem104 = new \EMQ\Message\DeadMessageBatchRequestEntry();
+              $xfer += $elem104->read($input);
+              $this->deadMessageBatchRequestEntryList []= $elem104;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('DeadMessageBatchRequest');
+    if ($this->queueName !== null) {
+      $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
+      $xfer += $output->writeString($this->queueName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deadMessageBatchRequestEntryList !== null) {
+      if (!is_array($this->deadMessageBatchRequestEntryList)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('deadMessageBatchRequestEntryList', TType::LST, 2);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->deadMessageBatchRequestEntryList));
+        {
+          foreach ($this->deadMessageBatchRequestEntryList as $iter105)
+          {
+            $xfer += $iter105->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class DeadMessageBatchResponse {
+  static $_TSPEC;
+
+  /**
+   * The successful receipt handle;
+   * 
+   * 
+   * @var string[]
+   */
+  public $successful = null;
+  /**
+   * Failed results list;
+   * Using receipt handle to index
+   * 
+   * 
+   * @var \EMQ\Message\MessageBatchErrorEntry[]
+   */
+  public $failed = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'successful',
+          'type' => TType::LST,
+          'etype' => TType::STRING,
+          'elem' => array(
+            'type' => TType::STRING,
+            ),
+          ),
+        2 => array(
+          'var' => 'failed',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\EMQ\Message\MessageBatchErrorEntry',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['successful'])) {
+        $this->successful = $vals['successful'];
+      }
+      if (isset($vals['failed'])) {
+        $this->failed = $vals['failed'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'DeadMessageBatchResponse';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::LST) {
+            $this->successful = array();
+            $_size106 = 0;
+            $_etype109 = 0;
+            $xfer += $input->readListBegin($_etype109, $_size106);
+            for ($_i110 = 0; $_i110 < $_size106; ++$_i110)
+            {
+              $elem111 = null;
+              $xfer += $input->readString($elem111);
+              $this->successful []= $elem111;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::LST) {
+            $this->failed = array();
+            $_size112 = 0;
+            $_etype115 = 0;
+            $xfer += $input->readListBegin($_etype115, $_size112);
+            for ($_i116 = 0; $_i116 < $_size112; ++$_i116)
+            {
+              $elem117 = null;
+              $elem117 = new \EMQ\Message\MessageBatchErrorEntry();
+              $xfer += $elem117->read($input);
+              $this->failed []= $elem117;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('DeadMessageBatchResponse');
+    if ($this->successful !== null) {
+      if (!is_array($this->successful)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('successful', TType::LST, 1);
+      {
+        $output->writeListBegin(TType::STRING, count($this->successful));
+        {
+          foreach ($this->successful as $iter118)
+          {
+            $xfer += $output->writeString($iter118);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->failed !== null) {
+      if (!is_array($this->failed)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('failed', TType::LST, 2);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->failed));
+        {
+          foreach ($this->failed as $iter119)
+          {
+            $xfer += $iter119->write($output);
           }
         }
         $output->writeListEnd();

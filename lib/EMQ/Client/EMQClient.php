@@ -172,7 +172,24 @@ class EMQClient {
           $idList[] = $receiptHandle;
         }
         break;
+      case 'deadMessageBatch':
+        self::validateQueueName($arguments[0]->queueName);
+        $entryList = $arguments[0]->deadMessageBatchRequestEntryList;
+        self::checkNotEmpty($entryList, "dead message list");
+        $idList = array();
+        foreach ($entryList as $entry) {
+          $receiptHandle = $entry->receiptHandle;
+          self::checkNotEmpty($receiptHandle, "receipt handle");
+          if (in_array($receiptHandle, $idList, true)) {
+            throw new GalaxyEmqServiceException(array(
+                'errMsg' => 'Not Unique ReceiptHandle',
+                'details' => "Duplicate receiptHandle:" . $receiptHandle));
+          }
+          $idList[] = $receiptHandle;
+        }
+        break;
       case 'deleteMessage':
+      case 'deadMessage':
         self::validateQueueName($arguments[0]->queueName);
         self::checkNotEmpty($arguments[0]->receiptHandle, "receipt handle");
         break;
