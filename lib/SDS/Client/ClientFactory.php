@@ -182,15 +182,13 @@ class RetryableClient
   public function __call($name, $arguments)
   {
     $method = new \ReflectionMethod($this->client_, $name);
-    $queryString = 'type=' . $name;
-    $this->httpClient_->setQueryString($queryString);
+    $this->httpClient_->setQueryString(SdsRequestUtils::getQuery($name, $arguments));
     $retry = 0;
     while (true) {
       $ex = null;
       $requestMetrics = new RequestMetrics();
       try {
         if ($this->metricsCollector_ != null) {
-          $requestMetrics->setQueryString($queryString);
           $requestMetrics->startEvent(RequestMetrics::EXECUTION_TIME);
         }
         $result = $method->invokeArgs($this->client_, $arguments);
