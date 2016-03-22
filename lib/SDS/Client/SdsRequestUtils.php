@@ -7,6 +7,7 @@
 
 namespace SDS\Client;
 
+use SDS\Table\BatchOp;
 
 class SdsRequestUtils
 {
