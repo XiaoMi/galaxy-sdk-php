@@ -23,8 +23,8 @@ use Thrift\Exception\TException;
 require_once dirname(__DIR__) . "/autoload.php";
 
 // Set your AppKey and AppSecret
-$appKey = "";
-$appSecret = "";
+$appKey = ""; // like "5521728135794"
+$appSecret = "";  // like "K7czwCuHttwZD49DD/qKzg=="
 $name = "testPHPClient";
 
 $credential = new Credential (
@@ -37,8 +37,8 @@ $credential = new Credential (
 
 $clientFactory = new EMQClientFactory($credential);
 
-$queueClient = $clientFactory->newDefaultQueueClient();
-$messageClient = $clientFactory->newDefaultMessageClient();
+$queueClient = $clientFactory->newDefaultQueueClient("http://awsbj0.emq.api.xiaomi.com");
+$messageClient = $clientFactory->newDefaultMessageClient("http://awsbj0.emq.api.xiaomi.com");
 
 
 try {
