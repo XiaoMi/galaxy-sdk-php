@@ -194,6 +194,13 @@ class SendMessageRequest {
    * @var array
    */
   public $messageAttributes = null;
+  /**
+   * Topic of this message
+   * 
+   * 
+   * @var string
+   */
+  public $topic = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -227,6 +234,10 @@ class SendMessageRequest {
             'class' => '\EMQ\Message\MessageAttribute',
             ),
           ),
+        6 => array(
+          'var' => 'topic',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -244,6 +255,9 @@ class SendMessageRequest {
       }
       if (isset($vals['messageAttributes'])) {
         $this->messageAttributes = $vals['messageAttributes'];
+      }
+      if (isset($vals['topic'])) {
+        $this->topic = $vals['topic'];
       }
     }
   }
@@ -316,6 +330,13 @@ class SendMessageRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 6:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topic);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -365,6 +386,11 @@ class SendMessageRequest {
         }
         $output->writeMapEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topic !== null) {
+      $xfer += $output->writeFieldBegin('topic', TType::STRING, 6);
+      $xfer += $output->writeString($this->topic);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -769,6 +795,13 @@ class SendMessageBatchRequest {
    * @var \EMQ\Message\SendMessageBatchRequestEntry[]
    */
   public $sendMessageBatchRequestEntryList = null;
+  /**
+   * Topic of this message-list
+   * 
+   * 
+   * @var string
+   */
+  public $topic = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -786,6 +819,10 @@ class SendMessageBatchRequest {
             'class' => '\EMQ\Message\SendMessageBatchRequestEntry',
             ),
           ),
+        3 => array(
+          'var' => 'topic',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -794,6 +831,9 @@ class SendMessageBatchRequest {
       }
       if (isset($vals['sendMessageBatchRequestEntryList'])) {
         $this->sendMessageBatchRequestEntryList = $vals['sendMessageBatchRequestEntryList'];
+      }
+      if (isset($vals['topic'])) {
+        $this->topic = $vals['topic'];
       }
     }
   }
@@ -842,6 +882,13 @@ class SendMessageBatchRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topic);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -875,6 +922,11 @@ class SendMessageBatchRequest {
         }
         $output->writeListEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topic !== null) {
+      $xfer += $output->writeFieldBegin('topic', TType::STRING, 3);
+      $xfer += $output->writeString($this->topic);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1590,6 +1642,8 @@ class ReceiveMessageResponse {
    * - originalMessageID
    * - originalReceiveCount
    * 
+   * If the message has been set topic
+   * - topic
    * 
    * 
    * @var array

@@ -747,6 +747,31 @@ class CreateQueueRequest {
    * @var bool
    */
   public $deadLetterQueue = null;
+  /**
+   * Set the queue be a topic queue or not;
+   * All messages with the same topic in topic queue will be received one by one
+   * Default: false
+   * 
+   * 
+   * @var bool
+   */
+  public $topicQueue = null;
+  /**
+   * Purge expired messages even if they have not been received by users
+   * Default: true
+   * 
+   * 
+   * @var bool
+   */
+  public $deleteMessageForce = true;
+  /**
+   * Name default tag
+   * You can use "" as default tag name while receiving messages if this field is not set
+   * 
+   * 
+   * @var string
+   */
+  public $defaultTagName = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -769,6 +794,18 @@ class CreateQueueRequest {
           'var' => 'deadLetterQueue',
           'type' => TType::BOOL,
           ),
+        6 => array(
+          'var' => 'topicQueue',
+          'type' => TType::BOOL,
+          ),
+        7 => array(
+          'var' => 'deleteMessageForce',
+          'type' => TType::BOOL,
+          ),
+        8 => array(
+          'var' => 'defaultTagName',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -783,6 +820,15 @@ class CreateQueueRequest {
       }
       if (isset($vals['deadLetterQueue'])) {
         $this->deadLetterQueue = $vals['deadLetterQueue'];
+      }
+      if (isset($vals['topicQueue'])) {
+        $this->topicQueue = $vals['topicQueue'];
+      }
+      if (isset($vals['deleteMessageForce'])) {
+        $this->deleteMessageForce = $vals['deleteMessageForce'];
+      }
+      if (isset($vals['defaultTagName'])) {
+        $this->defaultTagName = $vals['defaultTagName'];
       }
     }
   }
@@ -836,6 +882,27 @@ class CreateQueueRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 6:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->topicQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 7:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->deleteMessageForce);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 8:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->defaultTagName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -873,6 +940,21 @@ class CreateQueueRequest {
     if ($this->deadLetterQueue !== null) {
       $xfer += $output->writeFieldBegin('deadLetterQueue', TType::BOOL, 4);
       $xfer += $output->writeBool($this->deadLetterQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicQueue !== null) {
+      $xfer += $output->writeFieldBegin('topicQueue', TType::BOOL, 6);
+      $xfer += $output->writeBool($this->topicQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deleteMessageForce !== null) {
+      $xfer += $output->writeFieldBegin('deleteMessageForce', TType::BOOL, 7);
+      $xfer += $output->writeBool($this->deleteMessageForce);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->defaultTagName !== null) {
+      $xfer += $output->writeFieldBegin('defaultTagName', TType::STRING, 8);
+      $xfer += $output->writeString($this->defaultTagName);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -915,6 +997,24 @@ class CreateQueueResponse {
    * @var bool
    */
   public $deadLetterQueue = null;
+  /**
+   * Set the queue be a topic queue or not;
+   * 
+   * 
+   * @var bool
+   */
+  public $topicQueue = null;
+  /**
+   * Purge expired messages even if they have not been received by users
+   * 
+   * 
+   * @var bool
+   */
+  public $deleteMessageForce = null;
+  /**
+   * @var string
+   */
+  public $defaultTagName = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -937,6 +1037,18 @@ class CreateQueueResponse {
           'var' => 'deadLetterQueue',
           'type' => TType::BOOL,
           ),
+        6 => array(
+          'var' => 'topicQueue',
+          'type' => TType::BOOL,
+          ),
+        7 => array(
+          'var' => 'deleteMessageForce',
+          'type' => TType::BOOL,
+          ),
+        8 => array(
+          'var' => 'defaultTagName',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -951,6 +1063,15 @@ class CreateQueueResponse {
       }
       if (isset($vals['deadLetterQueue'])) {
         $this->deadLetterQueue = $vals['deadLetterQueue'];
+      }
+      if (isset($vals['topicQueue'])) {
+        $this->topicQueue = $vals['topicQueue'];
+      }
+      if (isset($vals['deleteMessageForce'])) {
+        $this->deleteMessageForce = $vals['deleteMessageForce'];
+      }
+      if (isset($vals['defaultTagName'])) {
+        $this->defaultTagName = $vals['defaultTagName'];
       }
     }
   }
@@ -1004,6 +1125,27 @@ class CreateQueueResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 6:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->topicQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 7:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->deleteMessageForce);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 8:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->defaultTagName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -1041,6 +1183,21 @@ class CreateQueueResponse {
     if ($this->deadLetterQueue !== null) {
       $xfer += $output->writeFieldBegin('deadLetterQueue', TType::BOOL, 4);
       $xfer += $output->writeBool($this->deadLetterQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicQueue !== null) {
+      $xfer += $output->writeFieldBegin('topicQueue', TType::BOOL, 6);
+      $xfer += $output->writeBool($this->topicQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deleteMessageForce !== null) {
+      $xfer += $output->writeFieldBegin('deleteMessageForce', TType::BOOL, 7);
+      $xfer += $output->writeBool($this->deleteMessageForce);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->defaultTagName !== null) {
+      $xfer += $output->writeFieldBegin('defaultTagName', TType::STRING, 8);
+      $xfer += $output->writeString($this->defaultTagName);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1869,6 +2026,24 @@ class GetQueueInfoResponse {
    * @var \EMQ\Queue\RedrivePolicy
    */
   public $redrivePolicy = null;
+  /**
+   * Set the queue be a topic queue or not;
+   * 
+   * 
+   * @var bool
+   */
+  public $topicQueue = null;
+  /**
+   * Purge expired messages even if they have not been received by users
+   * 
+   * 
+   * @var bool
+   */
+  public $deleteMessageForce = null;
+  /**
+   * @var string
+   */
+  public $defaultTagName = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -1901,6 +2076,18 @@ class GetQueueInfoResponse {
           'type' => TType::STRUCT,
           'class' => '\EMQ\Queue\RedrivePolicy',
           ),
+        8 => array(
+          'var' => 'topicQueue',
+          'type' => TType::BOOL,
+          ),
+        9 => array(
+          'var' => 'deleteMessageForce',
+          'type' => TType::BOOL,
+          ),
+        10 => array(
+          'var' => 'defaultTagName',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -1921,6 +2108,15 @@ class GetQueueInfoResponse {
       }
       if (isset($vals['redrivePolicy'])) {
         $this->redrivePolicy = $vals['redrivePolicy'];
+      }
+      if (isset($vals['topicQueue'])) {
+        $this->topicQueue = $vals['topicQueue'];
+      }
+      if (isset($vals['deleteMessageForce'])) {
+        $this->deleteMessageForce = $vals['deleteMessageForce'];
+      }
+      if (isset($vals['defaultTagName'])) {
+        $this->defaultTagName = $vals['defaultTagName'];
       }
     }
   }
@@ -1990,6 +2186,27 @@ class GetQueueInfoResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 8:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->topicQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 9:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->deleteMessageForce);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 10:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->defaultTagName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -2043,6 +2260,21 @@ class GetQueueInfoResponse {
       }
       $xfer += $output->writeFieldBegin('redrivePolicy', TType::STRUCT, 6);
       $xfer += $this->redrivePolicy->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicQueue !== null) {
+      $xfer += $output->writeFieldBegin('topicQueue', TType::BOOL, 8);
+      $xfer += $output->writeBool($this->topicQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->deleteMessageForce !== null) {
+      $xfer += $output->writeFieldBegin('deleteMessageForce', TType::BOOL, 9);
+      $xfer += $output->writeBool($this->deleteMessageForce);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->defaultTagName !== null) {
+      $xfer += $output->writeFieldBegin('defaultTagName', TType::STRING, 10);
+      $xfer += $output->writeString($this->defaultTagName);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
