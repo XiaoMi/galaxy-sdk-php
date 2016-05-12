@@ -177,51 +177,45 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
   /**
    * 添加关注电话
    * 
-   * @param string $tableName
    * @param string $phoneNumber
    * @throws \SDS\Errors\ServiceException
    */
-  public function subscribePhoneAlert($tableName, $phoneNumber);
+  public function subscribePhoneAlert($phoneNumber);
   /**
    * 取消关注电话
    * 
-   * @param string $tableName
    * @param string $phoneNumber
    * @throws \SDS\Errors\ServiceException
    */
-  public function unsubscribePhoneAlert($tableName, $phoneNumber);
+  public function unsubscribePhoneAlert($phoneNumber);
   /**
    * 添加关注邮箱
    * 
-   * @param string $tableName
    * @param string $email
    * @throws \SDS\Errors\ServiceException
    */
-  public function subscribeEmailAlert($tableName, $email);
+  public function subscribeEmailAlert($email);
   /**
    * 取消关注邮箱
    * 
-   * @param string $tableName
    * @param string $email
    * @throws \SDS\Errors\ServiceException
    */
-  public function unsubscribeEmailAlert($tableName, $email);
+  public function unsubscribeEmailAlert($email);
   /**
-   * 查看关注某个表的电话
+   * 查看所有关注电话
    * 
-   * @param string $tableName
    * @return string[]
    * @throws \SDS\Errors\ServiceException
    */
-  public function listSubscribedPhone($tableName);
+  public function listSubscribedPhone();
   /**
-   * 查看关注某个表的邮箱地址
+   * 查看所有关注邮箱地址
    * 
-   * @param string $tableName
    * @return string[]
    * @throws \SDS\Errors\ServiceException
    */
-  public function listSubscribedEmail($tableName);
+  public function listSubscribedEmail();
   /**
    * 获取表空间历史大小
    * 
@@ -232,40 +226,6 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function getTableHistorySize($tableName, $startDate, $stopDate);
-  /**
-   * 创建订阅者
-   * 
-   * @param string $tableName
-   * @param string $subscriberName
-   * @return \SDS\Table\Subscriber
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function createSubscriber($tableName, $subscriberName);
-  /**
-   * 删除订阅者
-   * 
-   * @param string $tableName
-   * @param string $subscriberName
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function deleteSubscriber($tableName, $subscriberName);
-  /**
-   * 获取订阅者信息
-   * 
-   * @param string $tableName
-   * @param string $subscriberName
-   * @return \SDS\Table\Subscriber
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function getSubscriber($tableName, $subscriberName);
-  /**
-   * 获取表所有的订阅者信息
-   * 
-   * @param string $tableName
-   * @return \SDS\Table\Subscriber[]
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function getSubscribers($tableName);
   /**
    * 获取表分区信息
    * 
@@ -285,52 +245,6 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    */
   public function getPartition($tableName, $partitionId);
   /**
-   * 获取表分区的消费偏移
-   * 
-   * @param string $tableName
-   * @param int $partitionId
-   * @param string $subscriberName
-   * @return \SDS\Table\ConsumedOffset
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function getPartitionConsumedOffset($tableName, $partitionId, $subscriberName);
-  /**
-   * 获取表分区已确认的消费偏移
-   * 
-   * @param string $tableName
-   * @param int $partitionId
-   * @param string $subscriberName
-   * @return \SDS\Table\CommittedOffset
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function getPartitionCommittedOffset($tableName, $partitionId, $subscriberName);
-  /**
-   * 创建主集群表的sinker（备集群接口）
-   * 
-   * @param string $subscribedTableName
-   * @param string $subscriberName
-   * @param string $sinkedTableName
-   * @param string $endpoint
-   * @return \SDS\Table\Sinker
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function createSinker($subscribedTableName, $subscriberName, $sinkedTableName, $endpoint);
-  /**
-   * 删除主集群表的sinker（备集群接口）
-   * 
-   * @param string $tableName
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function deleteSinker($tableName);
-  /**
-   * 获取sinker信息（备集群接口）
-   * 
-   * @param string $tableName
-   * @return \SDS\Table\Sinker
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function getSinker($tableName);
-  /**
    * 获取表分区的统计数据
    * 
    * @param string $tableName
@@ -340,17 +254,6 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function getPartitionStatistics($tableName, $partitionId);
-  /**
-   * 获取表分区某个订阅的统计数据
-   * 
-   * @param string $tableName
-   * @param int $partitionId
-   * @param string $subscriberName
-   * @return \SDS\Table\SubscriberStatistics 表分区订阅统计信息
-   * 
-   * @throws \SDS\Errors\ServiceException
-   */
-  public function getSubscriberStatistics($tableName, $partitionId, $subscriberName);
   /**
    * 表重命名
    * 
@@ -419,6 +322,13 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function getSnapshotState($tableName, $snapshotName);
+  /**
+   * 查询用户各种quota的使用情况
+   * 
+   * @return \SDS\Admin\QuotaInfo
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function getQuotaInfo();
 }
 
 class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Admin\AdminServiceIf {
@@ -1434,16 +1344,15 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function subscribePhoneAlert($tableName, $phoneNumber)
+  public function subscribePhoneAlert($phoneNumber)
   {
-    $this->send_subscribePhoneAlert($tableName, $phoneNumber);
+    $this->send_subscribePhoneAlert($phoneNumber);
     $this->recv_subscribePhoneAlert();
   }
 
-  public function send_subscribePhoneAlert($tableName, $phoneNumber)
+  public function send_subscribePhoneAlert($phoneNumber)
   {
     $args = new \SDS\Admin\AdminService_subscribePhoneAlert_args();
-    $args->tableName = $tableName;
     $args->phoneNumber = $phoneNumber;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -1486,16 +1395,15 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function unsubscribePhoneAlert($tableName, $phoneNumber)
+  public function unsubscribePhoneAlert($phoneNumber)
   {
-    $this->send_unsubscribePhoneAlert($tableName, $phoneNumber);
+    $this->send_unsubscribePhoneAlert($phoneNumber);
     $this->recv_unsubscribePhoneAlert();
   }
 
-  public function send_unsubscribePhoneAlert($tableName, $phoneNumber)
+  public function send_unsubscribePhoneAlert($phoneNumber)
   {
     $args = new \SDS\Admin\AdminService_unsubscribePhoneAlert_args();
-    $args->tableName = $tableName;
     $args->phoneNumber = $phoneNumber;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -1538,16 +1446,15 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function subscribeEmailAlert($tableName, $email)
+  public function subscribeEmailAlert($email)
   {
-    $this->send_subscribeEmailAlert($tableName, $email);
+    $this->send_subscribeEmailAlert($email);
     $this->recv_subscribeEmailAlert();
   }
 
-  public function send_subscribeEmailAlert($tableName, $email)
+  public function send_subscribeEmailAlert($email)
   {
     $args = new \SDS\Admin\AdminService_subscribeEmailAlert_args();
-    $args->tableName = $tableName;
     $args->email = $email;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -1590,16 +1497,15 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function unsubscribeEmailAlert($tableName, $email)
+  public function unsubscribeEmailAlert($email)
   {
-    $this->send_unsubscribeEmailAlert($tableName, $email);
+    $this->send_unsubscribeEmailAlert($email);
     $this->recv_unsubscribeEmailAlert();
   }
 
-  public function send_unsubscribeEmailAlert($tableName, $email)
+  public function send_unsubscribeEmailAlert($email)
   {
     $args = new \SDS\Admin\AdminService_unsubscribeEmailAlert_args();
-    $args->tableName = $tableName;
     $args->email = $email;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -1642,16 +1548,15 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function listSubscribedPhone($tableName)
+  public function listSubscribedPhone()
   {
-    $this->send_listSubscribedPhone($tableName);
+    $this->send_listSubscribedPhone();
     return $this->recv_listSubscribedPhone();
   }
 
-  public function send_listSubscribedPhone($tableName)
+  public function send_listSubscribedPhone()
   {
     $args = new \SDS\Admin\AdminService_listSubscribedPhone_args();
-    $args->tableName = $tableName;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1696,16 +1601,15 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("listSubscribedPhone failed: unknown result");
   }
 
-  public function listSubscribedEmail($tableName)
+  public function listSubscribedEmail()
   {
-    $this->send_listSubscribedEmail($tableName);
+    $this->send_listSubscribedEmail();
     return $this->recv_listSubscribedEmail();
   }
 
-  public function send_listSubscribedEmail($tableName)
+  public function send_listSubscribedEmail()
   {
     $args = new \SDS\Admin\AdminService_listSubscribedEmail_args();
-    $args->tableName = $tableName;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1804,222 +1708,6 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
       throw $result->se;
     }
     throw new \Exception("getTableHistorySize failed: unknown result");
-  }
-
-  public function createSubscriber($tableName, $subscriberName)
-  {
-    $this->send_createSubscriber($tableName, $subscriberName);
-    return $this->recv_createSubscriber();
-  }
-
-  public function send_createSubscriber($tableName, $subscriberName)
-  {
-    $args = new \SDS\Admin\AdminService_createSubscriber_args();
-    $args->tableName = $tableName;
-    $args->subscriberName = $subscriberName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'createSubscriber', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('createSubscriber', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_createSubscriber()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_createSubscriber_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_createSubscriber_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("createSubscriber failed: unknown result");
-  }
-
-  public function deleteSubscriber($tableName, $subscriberName)
-  {
-    $this->send_deleteSubscriber($tableName, $subscriberName);
-    $this->recv_deleteSubscriber();
-  }
-
-  public function send_deleteSubscriber($tableName, $subscriberName)
-  {
-    $args = new \SDS\Admin\AdminService_deleteSubscriber_args();
-    $args->tableName = $tableName;
-    $args->subscriberName = $subscriberName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'deleteSubscriber', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('deleteSubscriber', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_deleteSubscriber()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_deleteSubscriber_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_deleteSubscriber_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    return;
-  }
-
-  public function getSubscriber($tableName, $subscriberName)
-  {
-    $this->send_getSubscriber($tableName, $subscriberName);
-    return $this->recv_getSubscriber();
-  }
-
-  public function send_getSubscriber($tableName, $subscriberName)
-  {
-    $args = new \SDS\Admin\AdminService_getSubscriber_args();
-    $args->tableName = $tableName;
-    $args->subscriberName = $subscriberName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'getSubscriber', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('getSubscriber', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_getSubscriber()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getSubscriber_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_getSubscriber_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("getSubscriber failed: unknown result");
-  }
-
-  public function getSubscribers($tableName)
-  {
-    $this->send_getSubscribers($tableName);
-    return $this->recv_getSubscribers();
-  }
-
-  public function send_getSubscribers($tableName)
-  {
-    $args = new \SDS\Admin\AdminService_getSubscribers_args();
-    $args->tableName = $tableName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'getSubscribers', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('getSubscribers', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_getSubscribers()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getSubscribers_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_getSubscribers_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("getSubscribers failed: unknown result");
   }
 
   public function getPartitions($tableName)
@@ -2131,280 +1819,6 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("getPartition failed: unknown result");
   }
 
-  public function getPartitionConsumedOffset($tableName, $partitionId, $subscriberName)
-  {
-    $this->send_getPartitionConsumedOffset($tableName, $partitionId, $subscriberName);
-    return $this->recv_getPartitionConsumedOffset();
-  }
-
-  public function send_getPartitionConsumedOffset($tableName, $partitionId, $subscriberName)
-  {
-    $args = new \SDS\Admin\AdminService_getPartitionConsumedOffset_args();
-    $args->tableName = $tableName;
-    $args->partitionId = $partitionId;
-    $args->subscriberName = $subscriberName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'getPartitionConsumedOffset', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('getPartitionConsumedOffset', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_getPartitionConsumedOffset()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getPartitionConsumedOffset_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_getPartitionConsumedOffset_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("getPartitionConsumedOffset failed: unknown result");
-  }
-
-  public function getPartitionCommittedOffset($tableName, $partitionId, $subscriberName)
-  {
-    $this->send_getPartitionCommittedOffset($tableName, $partitionId, $subscriberName);
-    return $this->recv_getPartitionCommittedOffset();
-  }
-
-  public function send_getPartitionCommittedOffset($tableName, $partitionId, $subscriberName)
-  {
-    $args = new \SDS\Admin\AdminService_getPartitionCommittedOffset_args();
-    $args->tableName = $tableName;
-    $args->partitionId = $partitionId;
-    $args->subscriberName = $subscriberName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'getPartitionCommittedOffset', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('getPartitionCommittedOffset', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_getPartitionCommittedOffset()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getPartitionCommittedOffset_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_getPartitionCommittedOffset_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("getPartitionCommittedOffset failed: unknown result");
-  }
-
-  public function createSinker($subscribedTableName, $subscriberName, $sinkedTableName, $endpoint)
-  {
-    $this->send_createSinker($subscribedTableName, $subscriberName, $sinkedTableName, $endpoint);
-    return $this->recv_createSinker();
-  }
-
-  public function send_createSinker($subscribedTableName, $subscriberName, $sinkedTableName, $endpoint)
-  {
-    $args = new \SDS\Admin\AdminService_createSinker_args();
-    $args->subscribedTableName = $subscribedTableName;
-    $args->subscriberName = $subscriberName;
-    $args->sinkedTableName = $sinkedTableName;
-    $args->endpoint = $endpoint;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'createSinker', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('createSinker', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_createSinker()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_createSinker_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_createSinker_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("createSinker failed: unknown result");
-  }
-
-  public function deleteSinker($tableName)
-  {
-    $this->send_deleteSinker($tableName);
-    $this->recv_deleteSinker();
-  }
-
-  public function send_deleteSinker($tableName)
-  {
-    $args = new \SDS\Admin\AdminService_deleteSinker_args();
-    $args->tableName = $tableName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'deleteSinker', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('deleteSinker', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_deleteSinker()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_deleteSinker_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_deleteSinker_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    return;
-  }
-
-  public function getSinker($tableName)
-  {
-    $this->send_getSinker($tableName);
-    return $this->recv_getSinker();
-  }
-
-  public function send_getSinker($tableName)
-  {
-    $args = new \SDS\Admin\AdminService_getSinker_args();
-    $args->tableName = $tableName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'getSinker', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('getSinker', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_getSinker()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getSinker_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_getSinker_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("getSinker failed: unknown result");
-  }
-
   public function getPartitionStatistics($tableName, $partitionId)
   {
     $this->send_getPartitionStatistics($tableName, $partitionId);
@@ -2458,62 +1872,6 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
       throw $result->se;
     }
     throw new \Exception("getPartitionStatistics failed: unknown result");
-  }
-
-  public function getSubscriberStatistics($tableName, $partitionId, $subscriberName)
-  {
-    $this->send_getSubscriberStatistics($tableName, $partitionId, $subscriberName);
-    return $this->recv_getSubscriberStatistics();
-  }
-
-  public function send_getSubscriberStatistics($tableName, $partitionId, $subscriberName)
-  {
-    $args = new \SDS\Admin\AdminService_getSubscriberStatistics_args();
-    $args->tableName = $tableName;
-    $args->partitionId = $partitionId;
-    $args->subscriberName = $subscriberName;
-    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
-    if ($bin_accel)
-    {
-      thrift_protocol_write_binary($this->output_, 'getSubscriberStatistics', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
-    }
-    else
-    {
-      $this->output_->writeMessageBegin('getSubscriberStatistics', TMessageType::CALL, $this->seqid_);
-      $args->write($this->output_);
-      $this->output_->writeMessageEnd();
-      $this->output_->getTransport()->flush();
-    }
-  }
-
-  public function recv_getSubscriberStatistics()
-  {
-    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getSubscriberStatistics_result', $this->input_->isStrictRead());
-    else
-    {
-      $rseqid = 0;
-      $fname = null;
-      $mtype = 0;
-
-      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
-      if ($mtype == TMessageType::EXCEPTION) {
-        $x = new TApplicationException();
-        $x->read($this->input_);
-        $this->input_->readMessageEnd();
-        throw $x;
-      }
-      $result = new \SDS\Admin\AdminService_getSubscriberStatistics_result();
-      $result->read($this->input_);
-      $this->input_->readMessageEnd();
-    }
-    if ($result->success !== null) {
-      return $result->success;
-    }
-    if ($result->se !== null) {
-      throw $result->se;
-    }
-    throw new \Exception("getSubscriberStatistics failed: unknown result");
   }
 
   public function renameTable($srcName, $destName)
@@ -2938,6 +2296,59 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
       throw $result->se;
     }
     throw new \Exception("getSnapshotState failed: unknown result");
+  }
+
+  public function getQuotaInfo()
+  {
+    $this->send_getQuotaInfo();
+    return $this->recv_getQuotaInfo();
+  }
+
+  public function send_getQuotaInfo()
+  {
+    $args = new \SDS\Admin\AdminService_getQuotaInfo_args();
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'getQuotaInfo', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('getQuotaInfo', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_getQuotaInfo()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getQuotaInfo_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_getQuotaInfo_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("getQuotaInfo failed: unknown result");
   }
 
 }
@@ -6467,29 +5878,18 @@ class AdminService_subscribePhoneAlert_args {
   /**
    * @var string
    */
-  public $tableName = null;
-  /**
-   * @var string
-   */
   public $phoneNumber = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
           'var' => 'phoneNumber',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
       if (isset($vals['phoneNumber'])) {
         $this->phoneNumber = $vals['phoneNumber'];
       }
@@ -6517,13 +5917,6 @@ class AdminService_subscribePhoneAlert_args {
       {
         case 1:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->phoneNumber);
           } else {
             $xfer += $input->skip($ftype);
@@ -6542,13 +5935,8 @@ class AdminService_subscribePhoneAlert_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_subscribePhoneAlert_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
     if ($this->phoneNumber !== null) {
-      $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 1);
       $xfer += $output->writeString($this->phoneNumber);
       $xfer += $output->writeFieldEnd();
     }
@@ -6642,29 +6030,18 @@ class AdminService_unsubscribePhoneAlert_args {
   /**
    * @var string
    */
-  public $tableName = null;
-  /**
-   * @var string
-   */
   public $phoneNumber = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
           'var' => 'phoneNumber',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
       if (isset($vals['phoneNumber'])) {
         $this->phoneNumber = $vals['phoneNumber'];
       }
@@ -6692,13 +6069,6 @@ class AdminService_unsubscribePhoneAlert_args {
       {
         case 1:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->phoneNumber);
           } else {
             $xfer += $input->skip($ftype);
@@ -6717,13 +6087,8 @@ class AdminService_unsubscribePhoneAlert_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_unsubscribePhoneAlert_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
     if ($this->phoneNumber !== null) {
-      $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 1);
       $xfer += $output->writeString($this->phoneNumber);
       $xfer += $output->writeFieldEnd();
     }
@@ -6817,29 +6182,18 @@ class AdminService_subscribeEmailAlert_args {
   /**
    * @var string
    */
-  public $tableName = null;
-  /**
-   * @var string
-   */
   public $email = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
           'var' => 'email',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
       if (isset($vals['email'])) {
         $this->email = $vals['email'];
       }
@@ -6867,13 +6221,6 @@ class AdminService_subscribeEmailAlert_args {
       {
         case 1:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->email);
           } else {
             $xfer += $input->skip($ftype);
@@ -6892,13 +6239,8 @@ class AdminService_subscribeEmailAlert_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_subscribeEmailAlert_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
     if ($this->email !== null) {
-      $xfer += $output->writeFieldBegin('email', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('email', TType::STRING, 1);
       $xfer += $output->writeString($this->email);
       $xfer += $output->writeFieldEnd();
     }
@@ -6992,29 +6334,18 @@ class AdminService_unsubscribeEmailAlert_args {
   /**
    * @var string
    */
-  public $tableName = null;
-  /**
-   * @var string
-   */
   public $email = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
           'var' => 'email',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
       if (isset($vals['email'])) {
         $this->email = $vals['email'];
       }
@@ -7042,13 +6373,6 @@ class AdminService_unsubscribeEmailAlert_args {
       {
         case 1:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->email);
           } else {
             $xfer += $input->skip($ftype);
@@ -7067,13 +6391,8 @@ class AdminService_unsubscribeEmailAlert_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_unsubscribeEmailAlert_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
     if ($this->email !== null) {
-      $xfer += $output->writeFieldBegin('email', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('email', TType::STRING, 1);
       $xfer += $output->writeString($this->email);
       $xfer += $output->writeFieldEnd();
     }
@@ -7164,24 +6483,11 @@ class AdminService_unsubscribeEmailAlert_result {
 class AdminService_listSubscribedPhone_args {
   static $_TSPEC;
 
-  /**
-   * @var string
-   */
-  public $tableName = null;
 
-  public function __construct($vals=null) {
+  public function __construct() {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
         );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
     }
   }
 
@@ -7204,13 +6510,6 @@ class AdminService_listSubscribedPhone_args {
       }
       switch ($fid)
       {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -7224,11 +6523,6 @@ class AdminService_listSubscribedPhone_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_listSubscribedPhone_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -7365,24 +6659,11 @@ class AdminService_listSubscribedPhone_result {
 class AdminService_listSubscribedEmail_args {
   static $_TSPEC;
 
-  /**
-   * @var string
-   */
-  public $tableName = null;
 
-  public function __construct($vals=null) {
+  public function __construct() {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
         );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
     }
   }
 
@@ -7405,13 +6686,6 @@ class AdminService_listSubscribedEmail_args {
       }
       switch ($fid)
       {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -7425,11 +6699,6 @@ class AdminService_listSubscribedEmail_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_listSubscribedEmail_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -7818,790 +7087,6 @@ class AdminService_getTableHistorySize_result {
 
 }
 
-class AdminService_createSubscriber_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_createSubscriber_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_createSubscriber_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 2);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_createSubscriber_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\Subscriber
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\Subscriber',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_createSubscriber_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\Subscriber();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_createSubscriber_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_deleteSubscriber_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_deleteSubscriber_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_deleteSubscriber_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 2);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_deleteSubscriber_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_deleteSubscriber_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_deleteSubscriber_result');
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSubscriber_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSubscriber_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSubscriber_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 2);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSubscriber_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\Subscriber
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\Subscriber',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSubscriber_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\Subscriber();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSubscriber_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSubscribers_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSubscribers_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSubscribers_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSubscribers_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\Subscriber[]
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::LST,
-          'etype' => TType::STRUCT,
-          'elem' => array(
-            'type' => TType::STRUCT,
-            'class' => '\SDS\Table\Subscriber',
-            ),
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSubscribers_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::LST) {
-            $this->success = array();
-            $_size131 = 0;
-            $_etype134 = 0;
-            $xfer += $input->readListBegin($_etype134, $_size131);
-            for ($_i135 = 0; $_i135 < $_size131; ++$_i135)
-            {
-              $elem136 = null;
-              $elem136 = new \SDS\Table\Subscriber();
-              $xfer += $elem136->read($input);
-              $this->success []= $elem136;
-            }
-            $xfer += $input->readListEnd();
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSubscribers_result');
-    if ($this->success !== null) {
-      if (!is_array($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
-      {
-        $output->writeListBegin(TType::STRUCT, count($this->success));
-        {
-          foreach ($this->success as $iter137)
-          {
-            $xfer += $iter137->write($output);
-          }
-        }
-        $output->writeListEnd();
-      }
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
 class AdminService_getPartitions_args {
   static $_TSPEC;
 
@@ -8740,15 +7225,15 @@ class AdminService_getPartitions_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size138 = 0;
-            $_etype141 = 0;
-            $xfer += $input->readListBegin($_etype141, $_size138);
-            for ($_i142 = 0; $_i142 < $_size138; ++$_i142)
+            $_size131 = 0;
+            $_etype134 = 0;
+            $xfer += $input->readListBegin($_etype134, $_size131);
+            for ($_i135 = 0; $_i135 < $_size131; ++$_i135)
             {
-              $elem143 = null;
-              $elem143 = new \SDS\Table\Partition();
-              $xfer += $elem143->read($input);
-              $this->success []= $elem143;
+              $elem136 = null;
+              $elem136 = new \SDS\Table\Partition();
+              $xfer += $elem136->read($input);
+              $this->success []= $elem136;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -8784,9 +7269,9 @@ class AdminService_getPartitions_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter144)
+          foreach ($this->success as $iter137)
           {
-            $xfer += $iter144->write($output);
+            $xfer += $iter137->write($output);
           }
         }
         $output->writeListEnd();
@@ -9008,1039 +7493,6 @@ class AdminService_getPartition_result {
 
 }
 
-class AdminService_getPartitionConsumedOffset_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-  /**
-   * @var int
-   */
-  public $partitionId = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'partitionId',
-          'type' => TType::I32,
-          ),
-        3 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-      if (isset($vals['partitionId'])) {
-        $this->partitionId = $vals['partitionId'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getPartitionConsumedOffset_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getPartitionConsumedOffset_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
-      $xfer += $output->writeI32($this->partitionId);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getPartitionConsumedOffset_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\ConsumedOffset
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\ConsumedOffset',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getPartitionConsumedOffset_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\ConsumedOffset();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getPartitionConsumedOffset_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getPartitionCommittedOffset_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-  /**
-   * @var int
-   */
-  public $partitionId = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'partitionId',
-          'type' => TType::I32,
-          ),
-        3 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-      if (isset($vals['partitionId'])) {
-        $this->partitionId = $vals['partitionId'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getPartitionCommittedOffset_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getPartitionCommittedOffset_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
-      $xfer += $output->writeI32($this->partitionId);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getPartitionCommittedOffset_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\CommittedOffset
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\CommittedOffset',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getPartitionCommittedOffset_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\CommittedOffset();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getPartitionCommittedOffset_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_createSinker_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $subscribedTableName = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-  /**
-   * @var string
-   */
-  public $sinkedTableName = null;
-  /**
-   * @var string
-   */
-  public $endpoint = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'subscribedTableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        3 => array(
-          'var' => 'sinkedTableName',
-          'type' => TType::STRING,
-          ),
-        4 => array(
-          'var' => 'endpoint',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['subscribedTableName'])) {
-        $this->subscribedTableName = $vals['subscribedTableName'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-      if (isset($vals['sinkedTableName'])) {
-        $this->sinkedTableName = $vals['sinkedTableName'];
-      }
-      if (isset($vals['endpoint'])) {
-        $this->endpoint = $vals['endpoint'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_createSinker_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscribedTableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->sinkedTableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 4:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->endpoint);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_createSinker_args');
-    if ($this->subscribedTableName !== null) {
-      $xfer += $output->writeFieldBegin('subscribedTableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->subscribedTableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 2);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->sinkedTableName !== null) {
-      $xfer += $output->writeFieldBegin('sinkedTableName', TType::STRING, 3);
-      $xfer += $output->writeString($this->sinkedTableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->endpoint !== null) {
-      $xfer += $output->writeFieldBegin('endpoint', TType::STRING, 4);
-      $xfer += $output->writeString($this->endpoint);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_createSinker_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\Sinker
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\Sinker',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_createSinker_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\Sinker();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_createSinker_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_deleteSinker_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_deleteSinker_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_deleteSinker_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_deleteSinker_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_deleteSinker_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_deleteSinker_result');
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSinker_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSinker_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSinker_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSinker_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\Sinker
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\Sinker',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSinker_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\Sinker();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSinker_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
 class AdminService_getPartitionStatistics_args {
   static $_TSPEC;
 
@@ -10224,232 +7676,6 @@ class AdminService_getPartitionStatistics_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_getPartitionStatistics_result');
-    if ($this->success !== null) {
-      if (!is_object($this->success)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
-      $xfer += $this->success->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->se !== null) {
-      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
-      $xfer += $this->se->write($output);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSubscriberStatistics_args {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $tableName = null;
-  /**
-   * @var int
-   */
-  public $partitionId = null;
-  /**
-   * @var string
-   */
-  public $subscriberName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'tableName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'partitionId',
-          'type' => TType::I32,
-          ),
-        3 => array(
-          'var' => 'subscriberName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['tableName'])) {
-        $this->tableName = $vals['tableName'];
-      }
-      if (isset($vals['partitionId'])) {
-        $this->partitionId = $vals['partitionId'];
-      }
-      if (isset($vals['subscriberName'])) {
-        $this->subscriberName = $vals['subscriberName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSubscriberStatistics_args';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->tableName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 3:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->subscriberName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSubscriberStatistics_args');
-    if ($this->tableName !== null) {
-      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
-      $xfer += $output->writeString($this->tableName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
-      $xfer += $output->writeI32($this->partitionId);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->subscriberName !== null) {
-      $xfer += $output->writeFieldBegin('subscriberName', TType::STRING, 3);
-      $xfer += $output->writeString($this->subscriberName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class AdminService_getSubscriberStatistics_result {
-  static $_TSPEC;
-
-  /**
-   * @var \SDS\Table\SubscriberStatistics
-   */
-  public $success = null;
-  /**
-   * @var \SDS\Errors\ServiceException
-   */
-  public $se = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        0 => array(
-          'var' => 'success',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Table\SubscriberStatistics',
-          ),
-        1 => array(
-          'var' => 'se',
-          'type' => TType::STRUCT,
-          'class' => '\SDS\Errors\ServiceException',
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['success'])) {
-        $this->success = $vals['success'];
-      }
-      if (isset($vals['se'])) {
-        $this->se = $vals['se'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'AdminService_getSubscriberStatistics_result';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 0:
-          if ($ftype == TType::STRUCT) {
-            $this->success = new \SDS\Table\SubscriberStatistics();
-            $xfer += $this->success->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 1:
-          if ($ftype == TType::STRUCT) {
-            $this->se = new \SDS\Errors\ServiceException();
-            $xfer += $this->se->read($input);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('AdminService_getSubscriberStatistics_result');
     if ($this->success !== null) {
       if (!is_object($this->success)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
@@ -11509,15 +8735,15 @@ class AdminService_listAllSnapshots_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size145 = 0;
-            $_etype148 = 0;
-            $xfer += $input->readListBegin($_etype148, $_size145);
-            for ($_i149 = 0; $_i149 < $_size145; ++$_i149)
+            $_size138 = 0;
+            $_etype141 = 0;
+            $xfer += $input->readListBegin($_etype141, $_size138);
+            for ($_i142 = 0; $_i142 < $_size138; ++$_i142)
             {
-              $elem150 = null;
-              $elem150 = new \SDS\Admin\SnapshotTableView();
-              $xfer += $elem150->read($input);
-              $this->success []= $elem150;
+              $elem143 = null;
+              $elem143 = new \SDS\Admin\SnapshotTableView();
+              $xfer += $elem143->read($input);
+              $this->success []= $elem143;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -11553,9 +8779,9 @@ class AdminService_listAllSnapshots_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter151)
+          foreach ($this->success as $iter144)
           {
-            $xfer += $iter151->write($output);
+            $xfer += $iter144->write($output);
           }
         }
         $output->writeListEnd();
@@ -11933,6 +9159,161 @@ class AdminService_getSnapshotState_result {
     if ($this->success !== null) {
       $xfer += $output->writeFieldBegin('success', TType::I32, 0);
       $xfer += $output->writeI32($this->success);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getQuotaInfo_args {
+  static $_TSPEC;
+
+
+  public function __construct() {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        );
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getQuotaInfo_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getQuotaInfo_args');
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getQuotaInfo_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Admin\QuotaInfo
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Admin\QuotaInfo',
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getQuotaInfo_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \SDS\Admin\QuotaInfo();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getQuotaInfo_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->se !== null) {

@@ -1601,4 +1601,281 @@ class SnapshotTableView {
 
 }
 
+class QuotaInfo {
+  static $_TSPEC;
+
+  /**
+   * 用户AccountId
+   * 
+   * @var string
+   */
+  public $accountId = null;
+  /**
+   * 表数量限制
+   * 
+   * @var int
+   */
+  public $tableNum = null;
+  /**
+   * 已存在表数量
+   * 
+   * @var int
+   */
+  public $tableNumUsed = null;
+  /**
+   * 用户总的空间quota限制
+   * 
+   * @var int
+   */
+  public $space = null;
+  /**
+   * 已使用空间quota
+   * 
+   * @var int
+   */
+  public $spaceUsed = null;
+  /**
+   * 用户总的读quota限制
+   * 
+   * @var int
+   */
+  public $readCapacity = null;
+  /**
+   * 已使用读quota
+   * 
+   * @var int
+   */
+  public $readCapacityUsed = null;
+  /**
+   * 用户总的写quota限制
+   * 
+   * @var int
+   */
+  public $writeCapacity = null;
+  /**
+   * 已使用写quota
+   * 
+   * @var int
+   */
+  public $writeCapacityUsed = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'accountId',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'tableNum',
+          'type' => TType::I32,
+          ),
+        3 => array(
+          'var' => 'tableNumUsed',
+          'type' => TType::I32,
+          ),
+        4 => array(
+          'var' => 'space',
+          'type' => TType::I64,
+          ),
+        5 => array(
+          'var' => 'spaceUsed',
+          'type' => TType::I64,
+          ),
+        6 => array(
+          'var' => 'readCapacity',
+          'type' => TType::I64,
+          ),
+        7 => array(
+          'var' => 'readCapacityUsed',
+          'type' => TType::I64,
+          ),
+        8 => array(
+          'var' => 'writeCapacity',
+          'type' => TType::I64,
+          ),
+        9 => array(
+          'var' => 'writeCapacityUsed',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['accountId'])) {
+        $this->accountId = $vals['accountId'];
+      }
+      if (isset($vals['tableNum'])) {
+        $this->tableNum = $vals['tableNum'];
+      }
+      if (isset($vals['tableNumUsed'])) {
+        $this->tableNumUsed = $vals['tableNumUsed'];
+      }
+      if (isset($vals['space'])) {
+        $this->space = $vals['space'];
+      }
+      if (isset($vals['spaceUsed'])) {
+        $this->spaceUsed = $vals['spaceUsed'];
+      }
+      if (isset($vals['readCapacity'])) {
+        $this->readCapacity = $vals['readCapacity'];
+      }
+      if (isset($vals['readCapacityUsed'])) {
+        $this->readCapacityUsed = $vals['readCapacityUsed'];
+      }
+      if (isset($vals['writeCapacity'])) {
+        $this->writeCapacity = $vals['writeCapacity'];
+      }
+      if (isset($vals['writeCapacityUsed'])) {
+        $this->writeCapacityUsed = $vals['writeCapacityUsed'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'QuotaInfo';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->accountId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->tableNum);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->tableNumUsed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->space);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->spaceUsed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 6:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->readCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 7:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->readCapacityUsed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 8:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->writeCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 9:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->writeCapacityUsed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('QuotaInfo');
+    if ($this->accountId !== null) {
+      $xfer += $output->writeFieldBegin('accountId', TType::STRING, 1);
+      $xfer += $output->writeString($this->accountId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->tableNum !== null) {
+      $xfer += $output->writeFieldBegin('tableNum', TType::I32, 2);
+      $xfer += $output->writeI32($this->tableNum);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->tableNumUsed !== null) {
+      $xfer += $output->writeFieldBegin('tableNumUsed', TType::I32, 3);
+      $xfer += $output->writeI32($this->tableNumUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->space !== null) {
+      $xfer += $output->writeFieldBegin('space', TType::I64, 4);
+      $xfer += $output->writeI64($this->space);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->spaceUsed !== null) {
+      $xfer += $output->writeFieldBegin('spaceUsed', TType::I64, 5);
+      $xfer += $output->writeI64($this->spaceUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->readCapacity !== null) {
+      $xfer += $output->writeFieldBegin('readCapacity', TType::I64, 6);
+      $xfer += $output->writeI64($this->readCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->readCapacityUsed !== null) {
+      $xfer += $output->writeFieldBegin('readCapacityUsed', TType::I64, 7);
+      $xfer += $output->writeI64($this->readCapacityUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->writeCapacity !== null) {
+      $xfer += $output->writeFieldBegin('writeCapacity', TType::I64, 8);
+      $xfer += $output->writeI64($this->writeCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->writeCapacityUsed !== null) {
+      $xfer += $output->writeFieldBegin('writeCapacityUsed', TType::I64, 9);
+      $xfer += $output->writeI64($this->writeCapacityUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 
