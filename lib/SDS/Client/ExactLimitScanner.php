@@ -22,7 +22,7 @@ class ExactLimitScanner {
         usleep($baseWaitTime << ($retryTime - 1));
       }
       $result = $tableClient->scan($scanRequest);
-      if (empty($result->nextStartKey) && $result->nextSplitIndex == -1) {
+      if (empty($result->nextStartKey)) {
         $finished = true;
       } else {
         $limit = $limit - count($result->records);
@@ -35,9 +35,7 @@ class ExactLimitScanner {
             $retryTime = 0;
           }
           $scanRequest->limit = $limit;
-          if ($result->nextSplitIndex > 0) {
-            $scanRequest->splitIndex = $result->nextSplitIndex;
-          }
+          $scanRequest->startKey = $result->nextStartKey;
         }
       }
       foreach ($result->records as $record) {

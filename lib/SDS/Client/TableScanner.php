@@ -96,7 +96,6 @@ class RecordIterator implements \Iterator
     $this->pos_ = 0;
     $this->finished_ = false;
     $this->scanRequest_->startKey = $this->startKey_;
-
   }
 
   public function valid()
@@ -106,28 +105,20 @@ class RecordIterator implements \Iterator
         return false;
       } else {
         // call scan
-        while(true) {
-          if ($this->retryTime_ > 0) {
-              usleep($this->baseWaitTime_ << ($this->retryTime_ - 1));
-          }
-          $result = $this->tableClient_->scan($this->scanRequest_);
-          if (empty($result->nextStartKey) && $result->nextSplitIndex == -1) {
-            $this->finished_ = true;
+        if ($this->retryTime_ > 0) {
+          usleep($this->baseWaitTime_ << ($this->retryTime_ - 1));
+        }
+        $result = $this->tableClient_->scan($this->scanRequest_);
+        if (empty($result->nextStartKey)) {
+          $this->finished_ = true;
+        } else {
+          if (count($result->records) < $this->scanRequest_->limit && $result->throttled) {
+            $this->retryTime_++;
           } else {
-             if (count($result->records) < $this->scanRequest_->limit && $result->throttled) {
-                 $this->retryTime_++;
-             } else {
-                 $this->retryTime_ = 0;
-             }
-          }
-          $this->scanRequest_->startKey = $result->nextStartKey;
-          if ($result->nextSplitIndex > 0) {
-              $this->scanRequest_->splitIndex = $result->nextSplitIndex;
-          }
-          if (count($result->records) > 0 || $result->nextSplitIndex == -1) {
-            break;
+            $this->retryTime_ = 0;
           }
         }
+        $this->scanRequest_->startKey = $result->nextStartKey;
         $this->iter_ = new \ArrayIterator($result->records);
         $this->iter_->rewind();
       }
