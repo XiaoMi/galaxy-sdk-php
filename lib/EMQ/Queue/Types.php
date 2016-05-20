@@ -748,6 +748,13 @@ class CreateQueueRequest {
    */
   public $deadLetterQueue = null;
   /**
+   * Set the queue using priority of not;
+   * 
+   * 
+   * @var bool
+   */
+  public $enablePriority = null;
+  /**
    * Set the queue be a topic queue or not;
    * All messages with the same topic in topic queue will be received one by one
    * Default: false
@@ -794,6 +801,10 @@ class CreateQueueRequest {
           'var' => 'deadLetterQueue',
           'type' => TType::BOOL,
           ),
+        5 => array(
+          'var' => 'enablePriority',
+          'type' => TType::BOOL,
+          ),
         6 => array(
           'var' => 'topicQueue',
           'type' => TType::BOOL,
@@ -820,6 +831,9 @@ class CreateQueueRequest {
       }
       if (isset($vals['deadLetterQueue'])) {
         $this->deadLetterQueue = $vals['deadLetterQueue'];
+      }
+      if (isset($vals['enablePriority'])) {
+        $this->enablePriority = $vals['enablePriority'];
       }
       if (isset($vals['topicQueue'])) {
         $this->topicQueue = $vals['topicQueue'];
@@ -878,6 +892,13 @@ class CreateQueueRequest {
         case 4:
           if ($ftype == TType::BOOL) {
             $xfer += $input->readBool($this->deadLetterQueue);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enablePriority);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -942,6 +963,11 @@ class CreateQueueRequest {
       $xfer += $output->writeBool($this->deadLetterQueue);
       $xfer += $output->writeFieldEnd();
     }
+    if ($this->enablePriority !== null) {
+      $xfer += $output->writeFieldBegin('enablePriority', TType::BOOL, 5);
+      $xfer += $output->writeBool($this->enablePriority);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->topicQueue !== null) {
       $xfer += $output->writeFieldBegin('topicQueue', TType::BOOL, 6);
       $xfer += $output->writeBool($this->topicQueue);
@@ -998,6 +1024,13 @@ class CreateQueueResponse {
    */
   public $deadLetterQueue = null;
   /**
+   * The queue is using priority of not;
+   * 
+   * 
+   * @var bool
+   */
+  public $enablePriority = null;
+  /**
    * Set the queue be a topic queue or not;
    * 
    * 
@@ -1037,6 +1070,10 @@ class CreateQueueResponse {
           'var' => 'deadLetterQueue',
           'type' => TType::BOOL,
           ),
+        5 => array(
+          'var' => 'enablePriority',
+          'type' => TType::BOOL,
+          ),
         6 => array(
           'var' => 'topicQueue',
           'type' => TType::BOOL,
@@ -1063,6 +1100,9 @@ class CreateQueueResponse {
       }
       if (isset($vals['deadLetterQueue'])) {
         $this->deadLetterQueue = $vals['deadLetterQueue'];
+      }
+      if (isset($vals['enablePriority'])) {
+        $this->enablePriority = $vals['enablePriority'];
       }
       if (isset($vals['topicQueue'])) {
         $this->topicQueue = $vals['topicQueue'];
@@ -1125,6 +1165,13 @@ class CreateQueueResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 5:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enablePriority);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         case 6:
           if ($ftype == TType::BOOL) {
             $xfer += $input->readBool($this->topicQueue);
@@ -1183,6 +1230,11 @@ class CreateQueueResponse {
     if ($this->deadLetterQueue !== null) {
       $xfer += $output->writeFieldBegin('deadLetterQueue', TType::BOOL, 4);
       $xfer += $output->writeBool($this->deadLetterQueue);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->enablePriority !== null) {
+      $xfer += $output->writeFieldBegin('enablePriority', TType::BOOL, 5);
+      $xfer += $output->writeBool($this->enablePriority);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->topicQueue !== null) {
@@ -2027,6 +2079,13 @@ class GetQueueInfoResponse {
    */
   public $redrivePolicy = null;
   /**
+   * The queue using priority of not;
+   * 
+   * 
+   * @var bool
+   */
+  public $enablePriority = null;
+  /**
    * Set the queue be a topic queue or not;
    * 
    * 
@@ -2076,6 +2135,10 @@ class GetQueueInfoResponse {
           'type' => TType::STRUCT,
           'class' => '\EMQ\Queue\RedrivePolicy',
           ),
+        7 => array(
+          'var' => 'enablePriority',
+          'type' => TType::BOOL,
+          ),
         8 => array(
           'var' => 'topicQueue',
           'type' => TType::BOOL,
@@ -2108,6 +2171,9 @@ class GetQueueInfoResponse {
       }
       if (isset($vals['redrivePolicy'])) {
         $this->redrivePolicy = $vals['redrivePolicy'];
+      }
+      if (isset($vals['enablePriority'])) {
+        $this->enablePriority = $vals['enablePriority'];
       }
       if (isset($vals['topicQueue'])) {
         $this->topicQueue = $vals['topicQueue'];
@@ -2186,6 +2252,13 @@ class GetQueueInfoResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 7:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enablePriority);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         case 8:
           if ($ftype == TType::BOOL) {
             $xfer += $input->readBool($this->topicQueue);
@@ -2260,6 +2333,11 @@ class GetQueueInfoResponse {
       }
       $xfer += $output->writeFieldBegin('redrivePolicy', TType::STRUCT, 6);
       $xfer += $this->redrivePolicy->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->enablePriority !== null) {
+      $xfer += $output->writeFieldBegin('enablePriority', TType::BOOL, 7);
+      $xfer += $output->writeBool($this->enablePriority);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->topicQueue !== null) {

@@ -201,6 +201,13 @@ class SendMessageRequest {
    * @var string
    */
   public $topic = null;
+  /**
+   * The priority of the message, default 8 (1 ~ 16);
+   * 
+   * 
+   * @var int
+   */
+  public $priority = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -238,6 +245,10 @@ class SendMessageRequest {
           'var' => 'topic',
           'type' => TType::STRING,
           ),
+        7 => array(
+          'var' => 'priority',
+          'type' => TType::I32,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -258,6 +269,9 @@ class SendMessageRequest {
       }
       if (isset($vals['topic'])) {
         $this->topic = $vals['topic'];
+      }
+      if (isset($vals['priority'])) {
+        $this->priority = $vals['priority'];
       }
     }
   }
@@ -337,6 +351,13 @@ class SendMessageRequest {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 7:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->priority);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -391,6 +412,11 @@ class SendMessageRequest {
     if ($this->topic !== null) {
       $xfer += $output->writeFieldBegin('topic', TType::STRING, 6);
       $xfer += $output->writeString($this->topic);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->priority !== null) {
+      $xfer += $output->writeFieldBegin('priority', TType::I32, 7);
+      $xfer += $output->writeI32($this->priority);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -598,6 +624,13 @@ class SendMessageBatchRequestEntry {
    * @var array
    */
   public $messageAttributes = null;
+  /**
+   * The priority of the message, default 8 (1 ~ 16);
+   * 
+   * 
+   * @var int
+   */
+  public $priority = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -631,6 +664,10 @@ class SendMessageBatchRequestEntry {
             'class' => '\EMQ\Message\MessageAttribute',
             ),
           ),
+        6 => array(
+          'var' => 'priority',
+          'type' => TType::I32,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -648,6 +685,9 @@ class SendMessageBatchRequestEntry {
       }
       if (isset($vals['messageAttributes'])) {
         $this->messageAttributes = $vals['messageAttributes'];
+      }
+      if (isset($vals['priority'])) {
+        $this->priority = $vals['priority'];
       }
     }
   }
@@ -720,6 +760,13 @@ class SendMessageBatchRequestEntry {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 6:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->priority);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -769,6 +816,11 @@ class SendMessageBatchRequestEntry {
         }
         $output->writeMapEnd();
       }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->priority !== null) {
+      $xfer += $output->writeFieldBegin('priority', TType::I32, 6);
+      $xfer += $output->writeI32($this->priority);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -1627,6 +1679,7 @@ class ReceiveMessageResponse {
   /**
    * Attributes of message, including:
    * - senderId
+   * - priority
    * - messageLength
    * - md5OfBody
    * - sendTimestamp
