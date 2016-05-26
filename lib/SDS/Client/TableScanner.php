@@ -105,20 +105,26 @@ class RecordIterator implements \Iterator
         return false;
       } else {
         // call scan
-        if ($this->retryTime_ > 0) {
-          usleep($this->baseWaitTime_ << ($this->retryTime_ - 1));
-        }
-        $result = $this->tableClient_->scan($this->scanRequest_);
-        if (empty($result->nextStartKey)) {
-          $this->finished_ = true;
-        } else {
-          if (count($result->records) < $this->scanRequest_->limit && $result->throttled) {
-            $this->retryTime_++;
+        while (true) {
+          if ($this->retryTime_ > 0) {
+            usleep($this->baseWaitTime_ << ($this->retryTime_ - 1));
+          }
+          $result = $this->tableClient_->scan($this->scanRequest_);
+          if (empty($result->nextStartKey)) {
+            $this->finished_ = true;
+            break;
           } else {
-            $this->retryTime_ = 0;
+            if (count($result->records) < $this->scanRequest_->limit && $result->throttled) {
+              $this->retryTime_++;
+            } else {
+              $this->retryTime_ = 0;
+            }
+          }
+          $this->scanRequest_->startKey = $result->nextStartKey;
+          if (count($result->records) > 0) {
+            break;
           }
         }
-        $this->scanRequest_->startKey = $result->nextStartKey;
         $this->iter_ = new \ArrayIterator($result->records);
         $this->iter_->rewind();
       }
