@@ -721,6 +721,8 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $HK_HOST;
   static protected $HK_TIMESTAMP;
   static protected $HK_CONTENT_MD5;
+  static protected $MI_DATE;
+  static protected $XIAOMI_HEADER_PREFIX;
   static protected $HK_VERSION;
   static protected $HK_USER_TYPE;
   static protected $HK_SECRET_KEY_ID;
@@ -769,6 +771,14 @@ array(
 
   static protected function init_HK_CONTENT_MD5() {
     return "X-Xiaomi-Content-MD5";
+  }
+
+  static protected function init_MI_DATE() {
+    return "x-xiaomi-date";
+  }
+
+  static protected function init_XIAOMI_HEADER_PREFIX() {
+    return "x-xiaomi-";
   }
 
   static protected function init_HK_VERSION() {

@@ -178,44 +178,50 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * 添加关注电话
    * 
    * @param string $phoneNumber
+   * @param string $spaceId
    * @throws \SDS\Errors\ServiceException
    */
-  public function subscribePhoneAlert($phoneNumber);
+  public function subscribePhoneAlert($phoneNumber, $spaceId);
   /**
    * 取消关注电话
    * 
    * @param string $phoneNumber
+   * @param string $spaceId
    * @throws \SDS\Errors\ServiceException
    */
-  public function unsubscribePhoneAlert($phoneNumber);
+  public function unsubscribePhoneAlert($phoneNumber, $spaceId);
   /**
    * 添加关注邮箱
    * 
    * @param string $email
+   * @param string $spaceId
    * @throws \SDS\Errors\ServiceException
    */
-  public function subscribeEmailAlert($email);
+  public function subscribeEmailAlert($email, $spaceId);
   /**
    * 取消关注邮箱
    * 
    * @param string $email
+   * @param string $spaceId
    * @throws \SDS\Errors\ServiceException
    */
-  public function unsubscribeEmailAlert($email);
+  public function unsubscribeEmailAlert($email, $spaceId);
   /**
    * 查看所有关注电话
    * 
+   * @param string $spaceId
    * @return string[]
    * @throws \SDS\Errors\ServiceException
    */
-  public function listSubscribedPhone();
+  public function listSubscribedPhone($spaceId);
   /**
    * 查看所有关注邮箱地址
    * 
+   * @param string $spaceId
    * @return string[]
    * @throws \SDS\Errors\ServiceException
    */
-  public function listSubscribedEmail();
+  public function listSubscribedEmail($spaceId);
   /**
    * 获取表空间历史大小
    * 
@@ -297,10 +303,11 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
   /**
    * 查询用户各种quota的使用情况
    * 
+   * @param string $spaceId
    * @return \SDS\Admin\QuotaInfo
    * @throws \SDS\Errors\ServiceException
    */
-  public function getQuotaInfo();
+  public function getQuotaInfo($spaceId);
 }
 
 class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Admin\AdminServiceIf {
@@ -1316,16 +1323,17 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function subscribePhoneAlert($phoneNumber)
+  public function subscribePhoneAlert($phoneNumber, $spaceId)
   {
-    $this->send_subscribePhoneAlert($phoneNumber);
+    $this->send_subscribePhoneAlert($phoneNumber, $spaceId);
     $this->recv_subscribePhoneAlert();
   }
 
-  public function send_subscribePhoneAlert($phoneNumber)
+  public function send_subscribePhoneAlert($phoneNumber, $spaceId)
   {
     $args = new \SDS\Admin\AdminService_subscribePhoneAlert_args();
     $args->phoneNumber = $phoneNumber;
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1367,16 +1375,17 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function unsubscribePhoneAlert($phoneNumber)
+  public function unsubscribePhoneAlert($phoneNumber, $spaceId)
   {
-    $this->send_unsubscribePhoneAlert($phoneNumber);
+    $this->send_unsubscribePhoneAlert($phoneNumber, $spaceId);
     $this->recv_unsubscribePhoneAlert();
   }
 
-  public function send_unsubscribePhoneAlert($phoneNumber)
+  public function send_unsubscribePhoneAlert($phoneNumber, $spaceId)
   {
     $args = new \SDS\Admin\AdminService_unsubscribePhoneAlert_args();
     $args->phoneNumber = $phoneNumber;
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1418,16 +1427,17 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function subscribeEmailAlert($email)
+  public function subscribeEmailAlert($email, $spaceId)
   {
-    $this->send_subscribeEmailAlert($email);
+    $this->send_subscribeEmailAlert($email, $spaceId);
     $this->recv_subscribeEmailAlert();
   }
 
-  public function send_subscribeEmailAlert($email)
+  public function send_subscribeEmailAlert($email, $spaceId)
   {
     $args = new \SDS\Admin\AdminService_subscribeEmailAlert_args();
     $args->email = $email;
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1469,16 +1479,17 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function unsubscribeEmailAlert($email)
+  public function unsubscribeEmailAlert($email, $spaceId)
   {
-    $this->send_unsubscribeEmailAlert($email);
+    $this->send_unsubscribeEmailAlert($email, $spaceId);
     $this->recv_unsubscribeEmailAlert();
   }
 
-  public function send_unsubscribeEmailAlert($email)
+  public function send_unsubscribeEmailAlert($email, $spaceId)
   {
     $args = new \SDS\Admin\AdminService_unsubscribeEmailAlert_args();
     $args->email = $email;
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1520,15 +1531,16 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function listSubscribedPhone()
+  public function listSubscribedPhone($spaceId)
   {
-    $this->send_listSubscribedPhone();
+    $this->send_listSubscribedPhone($spaceId);
     return $this->recv_listSubscribedPhone();
   }
 
-  public function send_listSubscribedPhone()
+  public function send_listSubscribedPhone($spaceId)
   {
     $args = new \SDS\Admin\AdminService_listSubscribedPhone_args();
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -1573,15 +1585,16 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("listSubscribedPhone failed: unknown result");
   }
 
-  public function listSubscribedEmail()
+  public function listSubscribedEmail($spaceId)
   {
-    $this->send_listSubscribedEmail();
+    $this->send_listSubscribedEmail($spaceId);
     return $this->recv_listSubscribedEmail();
   }
 
-  public function send_listSubscribedEmail()
+  public function send_listSubscribedEmail($spaceId)
   {
     $args = new \SDS\Admin\AdminService_listSubscribedEmail_args();
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -2106,15 +2119,16 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("getSnapshotState failed: unknown result");
   }
 
-  public function getQuotaInfo()
+  public function getQuotaInfo($spaceId)
   {
-    $this->send_getQuotaInfo();
+    $this->send_getQuotaInfo($spaceId);
     return $this->recv_getQuotaInfo();
   }
 
-  public function send_getQuotaInfo()
+  public function send_getQuotaInfo($spaceId)
   {
     $args = new \SDS\Admin\AdminService_getQuotaInfo_args();
+    $args->spaceId = $spaceId;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
@@ -5687,6 +5701,10 @@ class AdminService_subscribePhoneAlert_args {
    * @var string
    */
   public $phoneNumber = null;
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5695,11 +5713,18 @@ class AdminService_subscribePhoneAlert_args {
           'var' => 'phoneNumber',
           'type' => TType::STRING,
           ),
+        2 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['phoneNumber'])) {
         $this->phoneNumber = $vals['phoneNumber'];
+      }
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
       }
     }
   }
@@ -5730,6 +5755,13 @@ class AdminService_subscribePhoneAlert_args {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -5746,6 +5778,11 @@ class AdminService_subscribePhoneAlert_args {
     if ($this->phoneNumber !== null) {
       $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 1);
       $xfer += $output->writeString($this->phoneNumber);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 2);
+      $xfer += $output->writeString($this->spaceId);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -5839,6 +5876,10 @@ class AdminService_unsubscribePhoneAlert_args {
    * @var string
    */
   public $phoneNumber = null;
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5847,11 +5888,18 @@ class AdminService_unsubscribePhoneAlert_args {
           'var' => 'phoneNumber',
           'type' => TType::STRING,
           ),
+        2 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['phoneNumber'])) {
         $this->phoneNumber = $vals['phoneNumber'];
+      }
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
       }
     }
   }
@@ -5882,6 +5930,13 @@ class AdminService_unsubscribePhoneAlert_args {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -5898,6 +5953,11 @@ class AdminService_unsubscribePhoneAlert_args {
     if ($this->phoneNumber !== null) {
       $xfer += $output->writeFieldBegin('phoneNumber', TType::STRING, 1);
       $xfer += $output->writeString($this->phoneNumber);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 2);
+      $xfer += $output->writeString($this->spaceId);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -5991,6 +6051,10 @@ class AdminService_subscribeEmailAlert_args {
    * @var string
    */
   public $email = null;
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -5999,11 +6063,18 @@ class AdminService_subscribeEmailAlert_args {
           'var' => 'email',
           'type' => TType::STRING,
           ),
+        2 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['email'])) {
         $this->email = $vals['email'];
+      }
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
       }
     }
   }
@@ -6034,6 +6105,13 @@ class AdminService_subscribeEmailAlert_args {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -6050,6 +6128,11 @@ class AdminService_subscribeEmailAlert_args {
     if ($this->email !== null) {
       $xfer += $output->writeFieldBegin('email', TType::STRING, 1);
       $xfer += $output->writeString($this->email);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 2);
+      $xfer += $output->writeString($this->spaceId);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -6143,6 +6226,10 @@ class AdminService_unsubscribeEmailAlert_args {
    * @var string
    */
   public $email = null;
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -6151,11 +6238,18 @@ class AdminService_unsubscribeEmailAlert_args {
           'var' => 'email',
           'type' => TType::STRING,
           ),
+        2 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
     }
     if (is_array($vals)) {
       if (isset($vals['email'])) {
         $this->email = $vals['email'];
+      }
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
       }
     }
   }
@@ -6186,6 +6280,13 @@ class AdminService_unsubscribeEmailAlert_args {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -6202,6 +6303,11 @@ class AdminService_unsubscribeEmailAlert_args {
     if ($this->email !== null) {
       $xfer += $output->writeFieldBegin('email', TType::STRING, 1);
       $xfer += $output->writeString($this->email);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 2);
+      $xfer += $output->writeString($this->spaceId);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -6291,11 +6397,24 @@ class AdminService_unsubscribeEmailAlert_result {
 class AdminService_listSubscribedPhone_args {
   static $_TSPEC;
 
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
-  public function __construct() {
+  public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
+        1 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
+      }
     }
   }
 
@@ -6318,6 +6437,13 @@ class AdminService_listSubscribedPhone_args {
       }
       switch ($fid)
       {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -6331,6 +6457,11 @@ class AdminService_listSubscribedPhone_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_listSubscribedPhone_args');
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 1);
+      $xfer += $output->writeString($this->spaceId);
+      $xfer += $output->writeFieldEnd();
+    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -6467,11 +6598,24 @@ class AdminService_listSubscribedPhone_result {
 class AdminService_listSubscribedEmail_args {
   static $_TSPEC;
 
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
-  public function __construct() {
+  public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
+        1 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
+      }
     }
   }
 
@@ -6494,6 +6638,13 @@ class AdminService_listSubscribedEmail_args {
       }
       switch ($fid)
       {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -6507,6 +6658,11 @@ class AdminService_listSubscribedEmail_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_listSubscribedEmail_args');
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 1);
+      $xfer += $output->writeString($this->spaceId);
+      $xfer += $output->writeFieldEnd();
+    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -8375,11 +8531,24 @@ class AdminService_getSnapshotState_result {
 class AdminService_getQuotaInfo_args {
   static $_TSPEC;
 
+  /**
+   * @var string
+   */
+  public $spaceId = null;
 
-  public function __construct() {
+  public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
+        1 => array(
+          'var' => 'spaceId',
+          'type' => TType::STRING,
+          ),
         );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['spaceId'])) {
+        $this->spaceId = $vals['spaceId'];
+      }
     }
   }
 
@@ -8402,6 +8571,13 @@ class AdminService_getQuotaInfo_args {
       }
       switch ($fid)
       {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->spaceId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -8415,6 +8591,11 @@ class AdminService_getQuotaInfo_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_getQuotaInfo_args');
+    if ($this->spaceId !== null) {
+      $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 1);
+      $xfer += $output->writeString($this->spaceId);
+      $xfer += $output->writeFieldEnd();
+    }
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;

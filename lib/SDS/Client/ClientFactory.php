@@ -53,13 +53,13 @@ class ClientFactory
   /**
    * @return \SDS\Auth\AuthServiceClient OAuth token generation service client
    */
-  public function newDefaultAuthClient($supportAccountKey = false)
+  public function newDefaultAuthClient()
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
         Constant::get('TABLE_AUTH_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
-    return $this->newAuthClient($url, $timeout, $connTimeout, $supportAccountKey);
+    return $this->newAuthClient($url, $timeout, $connTimeout);
   }
 
 
@@ -67,33 +67,31 @@ class ClientFactory
    * @param $url string the authentication endpoint url
    * @return \SDS\Auth\AuthServiceClient OAuth token generation service client
    */
-  public function newAuthClient($url, $timeout, $connTimeout, $supportAccountKey = false)
+  public function newAuthClient($url, $timeout, $connTimeout)
   {
-    $client = $this->getClient('SDS\Auth\AuthServiceClient', $url, $timeout, $connTimeout,
-        $supportAccountKey);
+    $client = $this->getClient('SDS\Auth\AuthServiceClient', $url, $timeout, $connTimeout);
     return new RetryableClient($client, $this->httpClient_, $this->metricsCollector_);
   }
 
   /**
    * @return \SDS\Admin\AdminServiceClient
    */
-  public function newDefaultAdminClient($supportAccountKey = false)
+  public function newDefaultAdminClient()
   {
     $url = Constant::get('DEFAULT_SERVICE_ENDPOINT') .
         Constant::get('ADMIN_SERVICE_PATH');
     $timeout = Constant::get('DEFAULT_CLIENT_TIMEOUT');
     $connTimeout = Constant::get('DEFAULT_CLIENT_CONN_TIMEOUT');
-    return $this->newAdminClient($url, $timeout, $connTimeout, $supportAccountKey);
+    return $this->newAdminClient($url, $timeout, $connTimeout);
   }
 
   /**
    * @param $url string the administration endpoint url
    * @return \SDS\Admin\AdminServiceClient
    */
-  public function newAdminClient($url, $timeout, $connTimeout, $supportAccountKey = false)
+  public function newAdminClient($url, $timeout, $connTimeout)
   {
-    $client = $this->getClient('SDS\Admin\AdminServiceClient', $url, $timeout, $connTimeout,
-        $supportAccountKey);
+    $client = $this->getClient('SDS\Admin\AdminServiceClient', $url, $timeout, $connTimeout);
     return new RetryableClient($client, $this->httpClient_, $this->metricsCollector_);
   }
 
@@ -113,14 +111,13 @@ class ClientFactory
    * @param $url string the table access endpoint url
    * @return \SDS\Table\TableServiceClient
    */
-  public function newTableClient($url, $timeout, $connTimeout, $supportAccountKey = false)
+  public function newTableClient($url, $timeout, $connTimeout)
   {
-    $client = $this->getClient('SDS\Table\TableServiceClient', $url, $timeout, $connTimeout,
-        $supportAccountKey);
+    $client = $this->getClient('SDS\Table\TableServiceClient', $url, $timeout, $connTimeout);
     return new RetryableClient($client, $this->httpClient_, $this->metricsCollector_);
   }
 
-  protected function getClient($clientClass, $url, $timeout, $connTimeout, $supportAccountKey)
+  protected function getClient($clientClass, $url, $timeout, $connTimeout)
   {
     $parts = parse_url($url);
     if (!isset($parts['port'])) {
@@ -132,7 +129,6 @@ class ClientFactory
     }
     $httpClient = new SdsTHttpClient($this->credential_, $url, $timeout, $connTimeout,
         $this->protocol_, $this->retryIfOperationTimeout_, $this->verbose_);
-    $httpClient->setSupportAccountKey($supportAccountKey);
     $this->httpClient_ = $httpClient;
     $httpClient->addHeaders(array('User-Agent' => $this->userAgent()));
 

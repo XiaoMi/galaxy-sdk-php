@@ -6,17 +6,14 @@
  */
 namespace SDS\Client;
 
+use RPC\Auth\Signer;
 use SDS\Auth\Constant;
 use SDS\Auth\Credential;
-use SDS\Auth\HttpAuthorizationHeader;
-use SDS\Auth\MacAlgorithm;
 use SDS\Common\ThriftProtocol;
 use SDS\Errors\HttpStatusCode;
 use Thrift\Exception\TTransportException;
 use Thrift\Factory\TStringFuncFactory;
-use Thrift\Protocol\TJSONProtocol;
 use Thrift\Transport\THttpClient;
-use Thrift\Transport\TMemoryBuffer;
 
 /*
  * Thrift HTTP transport for SDS service
@@ -25,6 +22,7 @@ use Thrift\Transport\TMemoryBuffer;
 
 class SdsTHttpClient extends THttpClient
 {
+  const DATE_FORMAT = 'D, d M Y H:i:s \G\M\T';
   /**
    * Endpoint URL
    * @var string
@@ -93,8 +91,6 @@ class SdsTHttpClient extends THttpClient
    */
   protected $queryString_;
 
-  protected $supportAccountKey_;
-
   protected $protocol_;
   /**
    * Make a new HTTP client.
@@ -121,7 +117,6 @@ class SdsTHttpClient extends THttpClient
     $this->clockOffset_ = null;
     $this->readOffset_ = 0;
     $this->queryString_ = '';
-    $this->supportAccountKey_ = false;
   }
 
   private function getHostHeader($parts) {
@@ -181,11 +176,6 @@ class SdsTHttpClient extends THttpClient
   public function setQueryString($queryString)
   {
     $this->queryString_ = $queryString;
-  }
-
-  public function setSupportAccountKey($supportAccountKey)
-  {
-    $this->supportAccountKey_ = $supportAccountKey;
   }
 
   public function setMetricsCollector($metricsCollector){
@@ -257,7 +247,7 @@ class SdsTHttpClient extends THttpClient
       'Content-Type' => $headerMaps[$this->protocol_],
       'Content-Length' => TStringFuncFactory::create()->strlen($this->buf_));
     $headers = array();
-    foreach (array_merge($defaultHeaders, $this->headers_, $this->getAuthenticationHeaders())
+    foreach (array_merge($defaultHeaders, $this->headers_, $this->getAuthenticationHeaders($this->url_, $defaultHeaders))
              as $key => $value) {
       $headers[] = "$key: $value";
     }
@@ -330,7 +320,7 @@ class SdsTHttpClient extends THttpClient
     return false;
   }
 
-  private function getAuthenticationHeaders()
+  private function getAuthenticationHeaders($uri, $default_headers)
   {
     if (!isset($this->credential_)) {
       return array();
@@ -348,26 +338,14 @@ class SdsTHttpClient extends THttpClient
       $now->add($this->clockOffset_); // adjust the local clock
     }
     $headers[Constant::get('HK_TIMESTAMP')] = $now->format('U');
+    $headers[Constant::get('MI_DATE')] = gmdate(self::DATE_FORMAT, time());
     $headers[Constant::get('HK_CONTENT_MD5')] = md5($this->buf_);
 
-    $data = implode("\n", array_values($headers));
-    $signature = hash_hmac("sha1", $data, $this->credential_->secretKey);
+    $signature = Signer::signToBase64("POST", $uri, array_merge($headers, $default_headers),
+      $this->credential_->secretKey, "sha1");
 
-    $authHeader = new HttpAuthorizationHeader(
-      array(
-        "algorithm" => MacAlgorithm::HmacSHA1,
-        "signedHeaders" => array_keys($headers),
-        "userType" => $this->credential_->type,
-        "secretKeyId" => $this->credential_->secretKeyId,
-        "signature" => $signature,
-        "supportAccountKey" => $this->supportAccountKey_
-      )
-    );
-
-    $mb = new TMemoryBuffer();
-    $protocol = new TJSONProtocol($mb);
-    $authHeader->write($protocol);
-    $headers[Constant::get('HK_AUTHORIZATION')] = $mb->getBuffer();
+    $authHeader = "Galaxy-V3 ".$this->credential_->secretKeyId.":".$signature;
+    $headers[Constant::get('HK_AUTHORIZATION')] = $authHeader;
 
     return $headers;
   }

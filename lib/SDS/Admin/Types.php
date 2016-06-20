@@ -1658,6 +1658,30 @@ class QuotaInfo {
    * @var int
    */
   public $writeCapacityUsed = null;
+  /**
+   * 用户总的备集群读quota限制
+   * 
+   * @var int
+   */
+  public $slaveReadCapacity = null;
+  /**
+   * 已使用备集群读quota
+   * 
+   * @var int
+   */
+  public $slaveReadCapacityUsed = null;
+  /**
+   * 用户总的备集群写quota限制
+   * 
+   * @var int
+   */
+  public $slaveWriteCapacity = null;
+  /**
+   * 已使用备集群写quota
+   * 
+   * @var int
+   */
+  public $slaveWriteCapacityUsed = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -1698,6 +1722,22 @@ class QuotaInfo {
           'var' => 'writeCapacityUsed',
           'type' => TType::I64,
           ),
+        10 => array(
+          'var' => 'slaveReadCapacity',
+          'type' => TType::I64,
+          ),
+        11 => array(
+          'var' => 'slaveReadCapacityUsed',
+          'type' => TType::I64,
+          ),
+        12 => array(
+          'var' => 'slaveWriteCapacity',
+          'type' => TType::I64,
+          ),
+        13 => array(
+          'var' => 'slaveWriteCapacityUsed',
+          'type' => TType::I64,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -1727,6 +1767,18 @@ class QuotaInfo {
       }
       if (isset($vals['writeCapacityUsed'])) {
         $this->writeCapacityUsed = $vals['writeCapacityUsed'];
+      }
+      if (isset($vals['slaveReadCapacity'])) {
+        $this->slaveReadCapacity = $vals['slaveReadCapacity'];
+      }
+      if (isset($vals['slaveReadCapacityUsed'])) {
+        $this->slaveReadCapacityUsed = $vals['slaveReadCapacityUsed'];
+      }
+      if (isset($vals['slaveWriteCapacity'])) {
+        $this->slaveWriteCapacity = $vals['slaveWriteCapacity'];
+      }
+      if (isset($vals['slaveWriteCapacityUsed'])) {
+        $this->slaveWriteCapacityUsed = $vals['slaveWriteCapacityUsed'];
       }
     }
   }
@@ -1813,6 +1865,34 @@ class QuotaInfo {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 10:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->slaveReadCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 11:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->slaveReadCapacityUsed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 12:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->slaveWriteCapacity);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 13:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->slaveWriteCapacityUsed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -1869,6 +1949,26 @@ class QuotaInfo {
     if ($this->writeCapacityUsed !== null) {
       $xfer += $output->writeFieldBegin('writeCapacityUsed', TType::I64, 9);
       $xfer += $output->writeI64($this->writeCapacityUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->slaveReadCapacity !== null) {
+      $xfer += $output->writeFieldBegin('slaveReadCapacity', TType::I64, 10);
+      $xfer += $output->writeI64($this->slaveReadCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->slaveReadCapacityUsed !== null) {
+      $xfer += $output->writeFieldBegin('slaveReadCapacityUsed', TType::I64, 11);
+      $xfer += $output->writeI64($this->slaveReadCapacityUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->slaveWriteCapacity !== null) {
+      $xfer += $output->writeFieldBegin('slaveWriteCapacity', TType::I64, 12);
+      $xfer += $output->writeI64($this->slaveWriteCapacity);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->slaveWriteCapacityUsed !== null) {
+      $xfer += $output->writeFieldBegin('slaveWriteCapacityUsed', TType::I64, 13);
+      $xfer += $output->writeI64($this->slaveWriteCapacityUsed);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
