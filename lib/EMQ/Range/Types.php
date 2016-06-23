@@ -191,9 +191,9 @@ final class Constant extends \Thrift\Type\TConstant {
 
   static protected function init_GALAXY_EMQ_QUEUE_READ_QPS_DEFAULT() {
     return     /**
-     * queue read qps, default 0 (0 ~ 100000)
+     * queue read qps, default 50 (0 ~ 100000)
      */
-0;
+50;
   }
 
   static protected function init_GALAXY_EMQ_QUEUE_READ_QPS_MINIMAL() {
@@ -206,9 +206,9 @@ final class Constant extends \Thrift\Type\TConstant {
 
   static protected function init_GALAXY_EMQ_QUEUE_WRITE_QPS_DEFAULT() {
     return     /**
-     * queue write qps, default 0 (0 ~ 100000)
+     * queue write qps, default 50 (0 ~ 100000)
      */
-0;
+50;
   }
 
   static protected function init_GALAXY_EMQ_QUEUE_WRITE_QPS_MINIMAL() {

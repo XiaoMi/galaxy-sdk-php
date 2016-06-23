@@ -2103,6 +2103,10 @@ class GetQueueInfoResponse {
    * @var string
    */
   public $defaultTagName = null;
+  /**
+   * @var string[]
+   */
+  public $sourceQueues = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -2151,6 +2155,14 @@ class GetQueueInfoResponse {
           'var' => 'defaultTagName',
           'type' => TType::STRING,
           ),
+        11 => array(
+          'var' => 'sourceQueues',
+          'type' => TType::LST,
+          'etype' => TType::STRING,
+          'elem' => array(
+            'type' => TType::STRING,
+            ),
+          ),
         );
     }
     if (is_array($vals)) {
@@ -2183,6 +2195,9 @@ class GetQueueInfoResponse {
       }
       if (isset($vals['defaultTagName'])) {
         $this->defaultTagName = $vals['defaultTagName'];
+      }
+      if (isset($vals['sourceQueues'])) {
+        $this->sourceQueues = $vals['sourceQueues'];
       }
     }
   }
@@ -2280,6 +2295,23 @@ class GetQueueInfoResponse {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 11:
+          if ($ftype == TType::LST) {
+            $this->sourceQueues = array();
+            $_size9 = 0;
+            $_etype12 = 0;
+            $xfer += $input->readListBegin($_etype12, $_size9);
+            for ($_i13 = 0; $_i13 < $_size9; ++$_i13)
+            {
+              $elem14 = null;
+              $xfer += $input->readString($elem14);
+              $this->sourceQueues []= $elem14;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -2353,6 +2385,23 @@ class GetQueueInfoResponse {
     if ($this->defaultTagName !== null) {
       $xfer += $output->writeFieldBegin('defaultTagName', TType::STRING, 10);
       $xfer += $output->writeString($this->defaultTagName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->sourceQueues !== null) {
+      if (!is_array($this->sourceQueues)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('sourceQueues', TType::LST, 11);
+      {
+        $output->writeListBegin(TType::STRING, count($this->sourceQueues));
+        {
+          foreach ($this->sourceQueues as $iter15)
+          {
+            $xfer += $output->writeString($iter15);
+          }
+        }
+        $output->writeListEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -2634,211 +2683,6 @@ class RemoveQueueRedrivePolicyRequest {
     if ($this->queueName !== null) {
       $xfer += $output->writeFieldBegin('queueName', TType::STRING, 1);
       $xfer += $output->writeString($this->queueName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class ListDeadLetterSourceQueuesRequest {
-  static $_TSPEC;
-
-  /**
-   * @var string
-   */
-  public $dlqName = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'dlqName',
-          'type' => TType::STRING,
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['dlqName'])) {
-        $this->dlqName = $vals['dlqName'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'ListDeadLetterSourceQueuesRequest';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->dlqName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('ListDeadLetterSourceQueuesRequest');
-    if ($this->dlqName !== null) {
-      $xfer += $output->writeFieldBegin('dlqName', TType::STRING, 1);
-      $xfer += $output->writeString($this->dlqName);
-      $xfer += $output->writeFieldEnd();
-    }
-    $xfer += $output->writeFieldStop();
-    $xfer += $output->writeStructEnd();
-    return $xfer;
-  }
-
-}
-
-class ListDeadLetterSourceQueuesResponse {
-  static $_TSPEC;
-
-  /**
-   * The dead letter queue name;
-   * 
-   * 
-   * @var string
-   */
-  public $dlqName = null;
-  /**
-   * The source queues, only a dead letter queue has source queues;
-   * 
-   * 
-   * @var string[]
-   */
-  public $sourceQueues = null;
-
-  public function __construct($vals=null) {
-    if (!isset(self::$_TSPEC)) {
-      self::$_TSPEC = array(
-        1 => array(
-          'var' => 'dlqName',
-          'type' => TType::STRING,
-          ),
-        2 => array(
-          'var' => 'sourceQueues',
-          'type' => TType::LST,
-          'etype' => TType::STRING,
-          'elem' => array(
-            'type' => TType::STRING,
-            ),
-          ),
-        );
-    }
-    if (is_array($vals)) {
-      if (isset($vals['dlqName'])) {
-        $this->dlqName = $vals['dlqName'];
-      }
-      if (isset($vals['sourceQueues'])) {
-        $this->sourceQueues = $vals['sourceQueues'];
-      }
-    }
-  }
-
-  public function getName() {
-    return 'ListDeadLetterSourceQueuesResponse';
-  }
-
-  public function read($input)
-  {
-    $xfer = 0;
-    $fname = null;
-    $ftype = 0;
-    $fid = 0;
-    $xfer += $input->readStructBegin($fname);
-    while (true)
-    {
-      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
-      if ($ftype == TType::STOP) {
-        break;
-      }
-      switch ($fid)
-      {
-        case 1:
-          if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->dlqName);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 2:
-          if ($ftype == TType::LST) {
-            $this->sourceQueues = array();
-            $_size9 = 0;
-            $_etype12 = 0;
-            $xfer += $input->readListBegin($_etype12, $_size9);
-            for ($_i13 = 0; $_i13 < $_size9; ++$_i13)
-            {
-              $elem14 = null;
-              $xfer += $input->readString($elem14);
-              $this->sourceQueues []= $elem14;
-            }
-            $xfer += $input->readListEnd();
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        default:
-          $xfer += $input->skip($ftype);
-          break;
-      }
-      $xfer += $input->readFieldEnd();
-    }
-    $xfer += $input->readStructEnd();
-    return $xfer;
-  }
-
-  public function write($output) {
-    $xfer = 0;
-    $xfer += $output->writeStructBegin('ListDeadLetterSourceQueuesResponse');
-    if ($this->dlqName !== null) {
-      $xfer += $output->writeFieldBegin('dlqName', TType::STRING, 1);
-      $xfer += $output->writeString($this->dlqName);
-      $xfer += $output->writeFieldEnd();
-    }
-    if ($this->sourceQueues !== null) {
-      if (!is_array($this->sourceQueues)) {
-        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-      }
-      $xfer += $output->writeFieldBegin('sourceQueues', TType::LST, 2);
-      {
-        $output->writeListBegin(TType::STRING, count($this->sourceQueues));
-        {
-          foreach ($this->sourceQueues as $iter15)
-          {
-            $xfer += $output->writeString($iter15);
-          }
-        }
-        $output->writeListEnd();
-      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
