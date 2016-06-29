@@ -2413,6 +2413,12 @@ class TableMetadata {
    * @var string
    */
   public $spaceId = null;
+  /**
+   * entityGroup acl 开关
+   * 
+   * @var bool
+   */
+  public $enableEgAcl = false;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -2499,6 +2505,10 @@ class TableMetadata {
           'var' => 'spaceId',
           'type' => TType::STRING,
           ),
+        14 => array(
+          'var' => 'enableEgAcl',
+          'type' => TType::BOOL,
+          ),
         );
     }
     if (is_array($vals)) {
@@ -2540,6 +2550,9 @@ class TableMetadata {
       }
       if (isset($vals['spaceId'])) {
         $this->spaceId = $vals['spaceId'];
+      }
+      if (isset($vals['enableEgAcl'])) {
+        $this->enableEgAcl = $vals['enableEgAcl'];
       }
     }
   }
@@ -2706,6 +2719,13 @@ class TableMetadata {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 14:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enableEgAcl);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -2844,6 +2864,11 @@ class TableMetadata {
     if ($this->spaceId !== null) {
       $xfer += $output->writeFieldBegin('spaceId', TType::STRING, 13);
       $xfer += $output->writeString($this->spaceId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->enableEgAcl !== null) {
+      $xfer += $output->writeFieldBegin('enableEgAcl', TType::BOOL, 14);
+      $xfer += $output->writeBool($this->enableEgAcl);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
