@@ -37,8 +37,8 @@ $credential = new Credential (
 
 $clientFactory = new EMQClientFactory($credential);
 
-$queueClient = $clientFactory->newDefaultQueueClient("http://awsbj0.emq.api.xiaomi.com");
-$messageClient = $clientFactory->newDefaultMessageClient("http://awsbj0.emq.api.xiaomi.com");
+$queueClient = $clientFactory->newQueueClient("http://awsbj0.emq.api.xiaomi.com");
+$messageClient = $clientFactory->newMessageClient("http://awsbj0.emq.api.xiaomi.com");
 
 
 try {
