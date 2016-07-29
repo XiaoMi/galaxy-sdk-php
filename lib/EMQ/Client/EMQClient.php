@@ -203,6 +203,13 @@ class EMQClient {
       case 'listDeadLetterSourceQueues':
         self::validateQueueName($arguments[0]->dlqName);
         break;
+      case 'copyQueue':
+        $queueMeta = $arguments[0]->queueMeta;
+        self::validateQueueName($queueMeta->queueName);
+        break;
+      case 'getQueueMeta':
+        self::validateQueueName($arguments[0]);
+        break;
     }
   }
 
