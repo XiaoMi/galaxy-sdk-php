@@ -70,6 +70,15 @@ interface TableServiceIf extends \SDS\Common\BaseServiceIf {
    */
   public function batch(\SDS\Table\BatchRequest $request);
   /**
+   * 批量条件写操作，消耗各自对应的写配额。同一个batch中多个操作修改同一行数据可能导致未定义行为（数据不一致），
+   * 应当避免，另外如果一个batch包含同一行的写操作，其执行顺序是不确定的，不推荐使用
+   * 
+   * @param \SDS\Table\BatchRequest $request
+   * @return \SDS\Table\BatchResult
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function batchCheckAndMutate(\SDS\Table\BatchRequest $request);
+  /**
    * 用于重建二级索引， 当表中存在与request相同的记录，成功写入
    * 
    * @param \SDS\Table\PutRequest $request
@@ -406,6 +415,60 @@ class TableServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\T
       throw $result->se;
     }
     throw new \Exception("batch failed: unknown result");
+  }
+
+  public function batchCheckAndMutate(\SDS\Table\BatchRequest $request)
+  {
+    $this->send_batchCheckAndMutate($request);
+    return $this->recv_batchCheckAndMutate();
+  }
+
+  public function send_batchCheckAndMutate(\SDS\Table\BatchRequest $request)
+  {
+    $args = new \SDS\Table\TableService_batchCheckAndMutate_args();
+    $args->request = $request;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'batchCheckAndMutate', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('batchCheckAndMutate', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_batchCheckAndMutate()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Table\TableService_batchCheckAndMutate_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Table\TableService_batchCheckAndMutate_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("batchCheckAndMutate failed: unknown result");
   }
 
   public function putToRebuildIndex(\SDS\Table\PutRequest $request)
@@ -1556,6 +1619,191 @@ class TableService_batch_result {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('TableService_batch_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class TableService_batchCheckAndMutate_args {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Table\BatchRequest
+   */
+  public $request = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'request',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\BatchRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['request'])) {
+        $this->request = $vals['request'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'TableService_batchCheckAndMutate_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->request = new \SDS\Table\BatchRequest();
+            $xfer += $this->request->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('TableService_batchCheckAndMutate_args');
+    if ($this->request !== null) {
+      if (!is_object($this->request)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 1);
+      $xfer += $this->request->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class TableService_batchCheckAndMutate_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Table\BatchResult
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\BatchResult',
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'TableService_batchCheckAndMutate_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \SDS\Table\BatchResult();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('TableService_batchCheckAndMutate_result');
     if ($this->success !== null) {
       if (!is_object($this->success)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
