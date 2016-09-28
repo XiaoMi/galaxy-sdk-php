@@ -515,6 +515,9 @@ final class Constant extends \Thrift\Type\TConstant {
   static protected $XIAOMI_HEADER_PREFIX;
   static protected $HK_CONTENT_MD5;
   static protected $HK_AUTHORIZATION;
+  static protected $HK_SERVICE_ADMIN;
+  static protected $HK_SERVICE_MARK;
+  static protected $HK_ATTACHED_INFO;
   static protected $SUGGESTED_SIGNATURE_HEADERS;
 
   static protected function init_SIGNATURE_SUPPORT() {
@@ -564,6 +567,23 @@ array(
      * 内容为TJSONTransport.encode(HttpAuthorizationHeader)
      */
 "Authorization";
+  }
+
+  static protected function init_HK_SERVICE_ADMIN() {
+    return     /**
+     * 认证 service_admin, 用于 SDS/FDS 等可信认的 Server 作为 producer 向 Talos 推送数据
+     * 构造Credential的AccessKeyId的格式为："HK_SERVICE_ADMIN#AccessKeyId#AttachedInfo"
+     * 其中，AttachedInfo可以是developerId或其他信息
+     */
+"Service-Admin";
+  }
+
+  static protected function init_HK_SERVICE_MARK() {
+    return "#";
+  }
+
+  static protected function init_HK_ATTACHED_INFO() {
+    return "Attached-Info";
   }
 
   static protected function init_SUGGESTED_SIGNATURE_HEADERS() {
