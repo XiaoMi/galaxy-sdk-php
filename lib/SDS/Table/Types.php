@@ -334,6 +334,10 @@ final class TableState {
    * 正在重命名，不可操作
    */
   const RENAMING = 9;
+  /**
+   * 正在恢复，不可操作
+   */
+  const RECOVERING = 10;
   static public $__names = array(
     1 => 'CREATING',
     2 => 'ENABLING',
@@ -344,6 +348,7 @@ final class TableState {
     7 => 'DELETED',
     8 => 'LAZY_DELETE',
     9 => 'RENAMING',
+    10 => 'RECOVERING',
   );
 }
 
@@ -2194,7 +2199,7 @@ class StreamSpec {
   static $_TSPEC;
 
   /**
-   * stream is enable or not
+   * stream is enabled or not
    * 
    * @var bool
    */
@@ -2344,6 +2349,187 @@ class StreamSpec {
 }
 
 /**
+ * point-in-time recovery
+ * 
+ */
+class PointInTimeRecovery {
+  static $_TSPEC;
+
+  /**
+   * PITR is enabled or not;
+   * 
+   * @var bool
+   */
+  public $enablePointInTimeRecovery = null;
+  /**
+   * topic name, should be stream-enabled and topic ttl >= pitr ttl;
+   * 
+   * @var string
+   */
+  public $topicName = null;
+  /**
+   * PITR ttl, include checkpoints and snapshots;
+   * 
+   * @var int
+   */
+  public $ttl = null;
+  /**
+   * snapshot period;
+   * 
+   * @var int
+   */
+  public $snapshotPeriod = null;
+  /**
+   * created timestamp, output value;
+   * 
+   * @var int
+   */
+  public $createdTimestamp = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'enablePointInTimeRecovery',
+          'type' => TType::BOOL,
+          ),
+        2 => array(
+          'var' => 'topicName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'ttl',
+          'type' => TType::I64,
+          ),
+        4 => array(
+          'var' => 'snapshotPeriod',
+          'type' => TType::I64,
+          ),
+        5 => array(
+          'var' => 'createdTimestamp',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['enablePointInTimeRecovery'])) {
+        $this->enablePointInTimeRecovery = $vals['enablePointInTimeRecovery'];
+      }
+      if (isset($vals['topicName'])) {
+        $this->topicName = $vals['topicName'];
+      }
+      if (isset($vals['ttl'])) {
+        $this->ttl = $vals['ttl'];
+      }
+      if (isset($vals['snapshotPeriod'])) {
+        $this->snapshotPeriod = $vals['snapshotPeriod'];
+      }
+      if (isset($vals['createdTimestamp'])) {
+        $this->createdTimestamp = $vals['createdTimestamp'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'PointInTimeRecovery';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->enablePointInTimeRecovery);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topicName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->ttl);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->snapshotPeriod);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->createdTimestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('PointInTimeRecovery');
+    if ($this->enablePointInTimeRecovery !== null) {
+      $xfer += $output->writeFieldBegin('enablePointInTimeRecovery', TType::BOOL, 1);
+      $xfer += $output->writeBool($this->enablePointInTimeRecovery);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicName !== null) {
+      $xfer += $output->writeFieldBegin('topicName', TType::STRING, 2);
+      $xfer += $output->writeString($this->topicName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->ttl !== null) {
+      $xfer += $output->writeFieldBegin('ttl', TType::I64, 3);
+      $xfer += $output->writeI64($this->ttl);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->snapshotPeriod !== null) {
+      $xfer += $output->writeFieldBegin('snapshotPeriod', TType::I64, 4);
+      $xfer += $output->writeI64($this->snapshotPeriod);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->createdTimestamp !== null) {
+      $xfer += $output->writeFieldBegin('createdTimestamp', TType::I64, 5);
+      $xfer += $output->writeI64($this->createdTimestamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+/**
  * 表Schema设置
  */
 class TableSchema {
@@ -2394,7 +2580,7 @@ class TableSchema {
    */
   public $preSplits = 1;
   /**
-   * stream定义, TopicName => StreamSpec
+   * stream定义，TopicName => StreamSpec
    * 
    * @var array
    */
@@ -2892,6 +3078,12 @@ class TableMetadata {
    * @var bool
    */
   public $enableEgAcl = false;
+  /**
+   * Point-In-Time recovery
+   * 
+   * @var \SDS\Table\PointInTimeRecovery
+   */
+  public $pitr = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -2982,6 +3174,11 @@ class TableMetadata {
           'var' => 'enableEgAcl',
           'type' => TType::BOOL,
           ),
+        15 => array(
+          'var' => 'pitr',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Table\PointInTimeRecovery',
+          ),
         );
     }
     if (is_array($vals)) {
@@ -3026,6 +3223,9 @@ class TableMetadata {
       }
       if (isset($vals['enableEgAcl'])) {
         $this->enableEgAcl = $vals['enableEgAcl'];
+      }
+      if (isset($vals['pitr'])) {
+        $this->pitr = $vals['pitr'];
       }
     }
   }
@@ -3199,6 +3399,14 @@ class TableMetadata {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 15:
+          if ($ftype == TType::STRUCT) {
+            $this->pitr = new \SDS\Table\PointInTimeRecovery();
+            $xfer += $this->pitr->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -3342,6 +3550,14 @@ class TableMetadata {
     if ($this->enableEgAcl !== null) {
       $xfer += $output->writeFieldBegin('enableEgAcl', TType::BOOL, 14);
       $xfer += $output->writeBool($this->enableEgAcl);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->pitr !== null) {
+      if (!is_object($this->pitr)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('pitr', TType::STRUCT, 15);
+      $xfer += $this->pitr->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -6892,6 +7108,12 @@ class InternalMutationLogEntry {
    * @var bool
    */
   public $rowDeleted = null;
+  /**
+   * increment amounts
+   * 
+   * @var array
+   */
+  public $amounts = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -6916,6 +7138,18 @@ class InternalMutationLogEntry {
           'var' => 'rowDeleted',
           'type' => TType::BOOL,
           ),
+        4 => array(
+          'var' => 'amounts',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRING,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRING,
+            ),
+          ),
         );
     }
     if (is_array($vals)) {
@@ -6927,6 +7161,9 @@ class InternalMutationLogEntry {
       }
       if (isset($vals['rowDeleted'])) {
         $this->rowDeleted = $vals['rowDeleted'];
+      }
+      if (isset($vals['amounts'])) {
+        $this->amounts = $vals['amounts'];
       }
     }
   }
@@ -6984,6 +7221,26 @@ class InternalMutationLogEntry {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 4:
+          if ($ftype == TType::MAP) {
+            $this->amounts = array();
+            $_size339 = 0;
+            $_ktype340 = 0;
+            $_vtype341 = 0;
+            $xfer += $input->readMapBegin($_ktype340, $_vtype341, $_size339);
+            for ($_i343 = 0; $_i343 < $_size339; ++$_i343)
+            {
+              $key344 = '';
+              $val345 = '';
+              $xfer += $input->readString($key344);
+              $xfer += $input->readString($val345);
+              $this->amounts[$key344] = $val345;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -7005,10 +7262,10 @@ class InternalMutationLogEntry {
       {
         $output->writeMapBegin(TType::STRING, TType::STRING, count($this->record));
         {
-          foreach ($this->record as $kiter339 => $viter340)
+          foreach ($this->record as $kiter346 => $viter347)
           {
-            $xfer += $output->writeString($kiter339);
-            $xfer += $output->writeString($viter340);
+            $xfer += $output->writeString($kiter346);
+            $xfer += $output->writeString($viter347);
           }
         }
         $output->writeMapEnd();
@@ -7023,6 +7280,24 @@ class InternalMutationLogEntry {
     if ($this->rowDeleted !== null) {
       $xfer += $output->writeFieldBegin('rowDeleted', TType::BOOL, 3);
       $xfer += $output->writeBool($this->rowDeleted);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->amounts !== null) {
+      if (!is_array($this->amounts)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('amounts', TType::MAP, 4);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRING, count($this->amounts));
+        {
+          foreach ($this->amounts as $kiter348 => $viter349)
+          {
+            $xfer += $output->writeString($kiter348);
+            $xfer += $output->writeString($viter349);
+          }
+        }
+        $output->writeMapEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -7063,6 +7338,12 @@ class MutationLogEntry {
    * @var int
    */
   public $timestamp = null;
+  /**
+   * increment amounts
+   * 
+   * @var array
+   */
+  public $amounts = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -7092,6 +7373,19 @@ class MutationLogEntry {
           'var' => 'timestamp',
           'type' => TType::I64,
           ),
+        5 => array(
+          'var' => 'amounts',
+          'type' => TType::MAP,
+          'ktype' => TType::STRING,
+          'vtype' => TType::STRUCT,
+          'key' => array(
+            'type' => TType::STRING,
+          ),
+          'val' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Table\Datum',
+            ),
+          ),
         );
     }
     if (is_array($vals)) {
@@ -7106,6 +7400,9 @@ class MutationLogEntry {
       }
       if (isset($vals['timestamp'])) {
         $this->timestamp = $vals['timestamp'];
+      }
+      if (isset($vals['amounts'])) {
+        $this->amounts = $vals['amounts'];
       }
     }
   }
@@ -7132,18 +7429,18 @@ class MutationLogEntry {
         case 1:
           if ($ftype == TType::MAP) {
             $this->record = array();
-            $_size341 = 0;
-            $_ktype342 = 0;
-            $_vtype343 = 0;
-            $xfer += $input->readMapBegin($_ktype342, $_vtype343, $_size341);
-            for ($_i345 = 0; $_i345 < $_size341; ++$_i345)
+            $_size350 = 0;
+            $_ktype351 = 0;
+            $_vtype352 = 0;
+            $xfer += $input->readMapBegin($_ktype351, $_vtype352, $_size350);
+            for ($_i354 = 0; $_i354 < $_size350; ++$_i354)
             {
-              $key346 = '';
-              $val347 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key346);
-              $val347 = new \SDS\Table\Datum();
-              $xfer += $val347->read($input);
-              $this->record[$key346] = $val347;
+              $key355 = '';
+              $val356 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key355);
+              $val356 = new \SDS\Table\Datum();
+              $xfer += $val356->read($input);
+              $this->record[$key355] = $val356;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7171,6 +7468,27 @@ class MutationLogEntry {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 5:
+          if ($ftype == TType::MAP) {
+            $this->amounts = array();
+            $_size357 = 0;
+            $_ktype358 = 0;
+            $_vtype359 = 0;
+            $xfer += $input->readMapBegin($_ktype358, $_vtype359, $_size357);
+            for ($_i361 = 0; $_i361 < $_size357; ++$_i361)
+            {
+              $key362 = '';
+              $val363 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key362);
+              $val363 = new \SDS\Table\Datum();
+              $xfer += $val363->read($input);
+              $this->amounts[$key362] = $val363;
+            }
+            $xfer += $input->readMapEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -7192,10 +7510,10 @@ class MutationLogEntry {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->record));
         {
-          foreach ($this->record as $kiter348 => $viter349)
+          foreach ($this->record as $kiter364 => $viter365)
           {
-            $xfer += $output->writeString($kiter348);
-            $xfer += $viter349->write($output);
+            $xfer += $output->writeString($kiter364);
+            $xfer += $viter365->write($output);
           }
         }
         $output->writeMapEnd();
@@ -7215,6 +7533,24 @@ class MutationLogEntry {
     if ($this->timestamp !== null) {
       $xfer += $output->writeFieldBegin('timestamp', TType::I64, 4);
       $xfer += $output->writeI64($this->timestamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->amounts !== null) {
+      if (!is_array($this->amounts)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('amounts', TType::MAP, 5);
+      {
+        $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->amounts));
+        {
+          foreach ($this->amounts as $kiter366 => $viter367)
+          {
+            $xfer += $output->writeString($kiter366);
+            $xfer += $viter367->write($output);
+          }
+        }
+        $output->writeMapEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -7311,18 +7647,18 @@ class RecordImage {
         case 1:
           if ($ftype == TType::MAP) {
             $this->record = array();
-            $_size350 = 0;
-            $_ktype351 = 0;
-            $_vtype352 = 0;
-            $xfer += $input->readMapBegin($_ktype351, $_vtype352, $_size350);
-            for ($_i354 = 0; $_i354 < $_size350; ++$_i354)
+            $_size368 = 0;
+            $_ktype369 = 0;
+            $_vtype370 = 0;
+            $xfer += $input->readMapBegin($_ktype369, $_vtype370, $_size368);
+            for ($_i372 = 0; $_i372 < $_size368; ++$_i372)
             {
-              $key355 = '';
-              $val356 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key355);
-              $val356 = new \SDS\Table\Datum();
-              $xfer += $val356->read($input);
-              $this->record[$key355] = $val356;
+              $key373 = '';
+              $val374 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key373);
+              $val374 = new \SDS\Table\Datum();
+              $xfer += $val374->read($input);
+              $this->record[$key373] = $val374;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7364,10 +7700,10 @@ class RecordImage {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->record));
         {
-          foreach ($this->record as $kiter357 => $viter358)
+          foreach ($this->record as $kiter375 => $viter376)
           {
-            $xfer += $output->writeString($kiter357);
-            $xfer += $viter358->write($output);
+            $xfer += $output->writeString($kiter375);
+            $xfer += $viter376->write($output);
           }
         }
         $output->writeMapEnd();

@@ -78,12 +78,12 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
   /**
    * 克隆表
    * 
-   * @param string $srcName
-   * @param string $destTable
+   * @param string $srcTableName
+   * @param string $destTableName
    * @param bool $flushTable
    * @throws \SDS\Errors\ServiceException
    */
-  public function cloneTable($srcName, $destTable, $flushTable);
+  public function cloneTable($srcTableName, $destTableName, $flushTable);
   /**
    * 关闭表读写操作
    * 
@@ -308,6 +308,45 @@ interface AdminServiceIf extends \SDS\Common\BaseServiceIf {
    * @throws \SDS\Errors\ServiceException
    */
   public function getQuotaInfo($spaceId);
+  /**
+   * 查询最近的stream checkpoint
+   * 
+   * @param string $tableName
+   * @param string $topicName
+   * @return \SDS\Admin\StreamCheckpoint
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function getLatestStreamCheckpoint($tableName, $topicName);
+  /**
+   * 查询小于等于timestamp的最大stream checkpoint
+   * 
+   * @param string $tableName
+   * @param string $topicName
+   * @param int $timestamp
+   * @return \SDS\Admin\StreamCheckpoint
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function getFloorStreamCheckpoint($tableName, $topicName, $timestamp);
+  /**
+   * 查询大于等于timestamp的最小stream checkpoint
+   * 
+   * @param string $tableName
+   * @param string $topicName
+   * @param int $timestamp
+   * @return \SDS\Admin\StreamCheckpoint
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function getCeilStreamCheckpoint($tableName, $topicName, $timestamp);
+  /**
+   * 恢复表到指定timestamp的状态，destTableName由系统根据最近快照创建，异步操作
+   * 
+   * @param string $srcTableName
+   * @param string $destTableName
+   * @param string $topicName
+   * @param int $timestamp
+   * @throws \SDS\Errors\ServiceException
+   */
+  public function recoverTable($srcTableName, $destTableName, $topicName, $timestamp);
 }
 
 class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\Admin\AdminServiceIf {
@@ -684,17 +723,17 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     return;
   }
 
-  public function cloneTable($srcName, $destTable, $flushTable)
+  public function cloneTable($srcTableName, $destTableName, $flushTable)
   {
-    $this->send_cloneTable($srcName, $destTable, $flushTable);
+    $this->send_cloneTable($srcTableName, $destTableName, $flushTable);
     $this->recv_cloneTable();
   }
 
-  public function send_cloneTable($srcName, $destTable, $flushTable)
+  public function send_cloneTable($srcTableName, $destTableName, $flushTable)
   {
     $args = new \SDS\Admin\AdminService_cloneTable_args();
-    $args->srcName = $srcName;
-    $args->destTable = $destTable;
+    $args->srcTableName = $srcTableName;
+    $args->destTableName = $destTableName;
     $args->flushTable = $flushTable;
     $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -2173,6 +2212,227 @@ class AdminServiceClient extends \SDS\Common\BaseServiceClient implements \SDS\A
     throw new \Exception("getQuotaInfo failed: unknown result");
   }
 
+  public function getLatestStreamCheckpoint($tableName, $topicName)
+  {
+    $this->send_getLatestStreamCheckpoint($tableName, $topicName);
+    return $this->recv_getLatestStreamCheckpoint();
+  }
+
+  public function send_getLatestStreamCheckpoint($tableName, $topicName)
+  {
+    $args = new \SDS\Admin\AdminService_getLatestStreamCheckpoint_args();
+    $args->tableName = $tableName;
+    $args->topicName = $topicName;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'getLatestStreamCheckpoint', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('getLatestStreamCheckpoint', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_getLatestStreamCheckpoint()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getLatestStreamCheckpoint_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_getLatestStreamCheckpoint_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("getLatestStreamCheckpoint failed: unknown result");
+  }
+
+  public function getFloorStreamCheckpoint($tableName, $topicName, $timestamp)
+  {
+    $this->send_getFloorStreamCheckpoint($tableName, $topicName, $timestamp);
+    return $this->recv_getFloorStreamCheckpoint();
+  }
+
+  public function send_getFloorStreamCheckpoint($tableName, $topicName, $timestamp)
+  {
+    $args = new \SDS\Admin\AdminService_getFloorStreamCheckpoint_args();
+    $args->tableName = $tableName;
+    $args->topicName = $topicName;
+    $args->timestamp = $timestamp;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'getFloorStreamCheckpoint', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('getFloorStreamCheckpoint', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_getFloorStreamCheckpoint()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getFloorStreamCheckpoint_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_getFloorStreamCheckpoint_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("getFloorStreamCheckpoint failed: unknown result");
+  }
+
+  public function getCeilStreamCheckpoint($tableName, $topicName, $timestamp)
+  {
+    $this->send_getCeilStreamCheckpoint($tableName, $topicName, $timestamp);
+    return $this->recv_getCeilStreamCheckpoint();
+  }
+
+  public function send_getCeilStreamCheckpoint($tableName, $topicName, $timestamp)
+  {
+    $args = new \SDS\Admin\AdminService_getCeilStreamCheckpoint_args();
+    $args->tableName = $tableName;
+    $args->topicName = $topicName;
+    $args->timestamp = $timestamp;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'getCeilStreamCheckpoint', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('getCeilStreamCheckpoint', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_getCeilStreamCheckpoint()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_getCeilStreamCheckpoint_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_getCeilStreamCheckpoint_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    throw new \Exception("getCeilStreamCheckpoint failed: unknown result");
+  }
+
+  public function recoverTable($srcTableName, $destTableName, $topicName, $timestamp)
+  {
+    $this->send_recoverTable($srcTableName, $destTableName, $topicName, $timestamp);
+    $this->recv_recoverTable();
+  }
+
+  public function send_recoverTable($srcTableName, $destTableName, $topicName, $timestamp)
+  {
+    $args = new \SDS\Admin\AdminService_recoverTable_args();
+    $args->srcTableName = $srcTableName;
+    $args->destTableName = $destTableName;
+    $args->topicName = $topicName;
+    $args->timestamp = $timestamp;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'recoverTable', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('recoverTable', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_recoverTable()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\SDS\Admin\AdminService_recoverTable_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \SDS\Admin\AdminService_recoverTable_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->se !== null) {
+      throw $result->se;
+    }
+    return;
+  }
+
 }
 
 // HELPER FUNCTIONS AND STRUCTURES
@@ -2627,15 +2887,15 @@ class AdminService_findAllApps_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size48 = 0;
-            $_etype51 = 0;
-            $xfer += $input->readListBegin($_etype51, $_size48);
-            for ($_i52 = 0; $_i52 < $_size48; ++$_i52)
+            $_size62 = 0;
+            $_etype65 = 0;
+            $xfer += $input->readListBegin($_etype65, $_size62);
+            for ($_i66 = 0; $_i66 < $_size62; ++$_i66)
             {
-              $elem53 = null;
-              $elem53 = new \SDS\Admin\AppInfo();
-              $xfer += $elem53->read($input);
-              $this->success []= $elem53;
+              $elem67 = null;
+              $elem67 = new \SDS\Admin\AppInfo();
+              $xfer += $elem67->read($input);
+              $this->success []= $elem67;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2671,9 +2931,9 @@ class AdminService_findAllApps_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter54)
+          foreach ($this->success as $iter68)
           {
-            $xfer += $iter54->write($output);
+            $xfer += $iter68->write($output);
           }
         }
         $output->writeListEnd();
@@ -2805,15 +3065,15 @@ class AdminService_findAllTables_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size55 = 0;
-            $_etype58 = 0;
-            $xfer += $input->readListBegin($_etype58, $_size55);
-            for ($_i59 = 0; $_i59 < $_size55; ++$_i59)
+            $_size69 = 0;
+            $_etype72 = 0;
+            $xfer += $input->readListBegin($_etype72, $_size69);
+            for ($_i73 = 0; $_i73 < $_size69; ++$_i73)
             {
-              $elem60 = null;
-              $elem60 = new \SDS\Table\TableInfo();
-              $xfer += $elem60->read($input);
-              $this->success []= $elem60;
+              $elem74 = null;
+              $elem74 = new \SDS\Table\TableInfo();
+              $xfer += $elem74->read($input);
+              $this->success []= $elem74;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2849,9 +3109,9 @@ class AdminService_findAllTables_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter61)
+          foreach ($this->success as $iter75)
           {
-            $xfer += $iter61->write($output);
+            $xfer += $iter75->write($output);
           }
         }
         $output->writeListEnd();
@@ -3416,11 +3676,11 @@ class AdminService_cloneTable_args {
   /**
    * @var string
    */
-  public $srcName = null;
+  public $srcTableName = null;
   /**
    * @var string
    */
-  public $destTable = null;
+  public $destTableName = null;
   /**
    * @var bool
    */
@@ -3430,11 +3690,11 @@ class AdminService_cloneTable_args {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'srcName',
+          'var' => 'srcTableName',
           'type' => TType::STRING,
           ),
         2 => array(
-          'var' => 'destTable',
+          'var' => 'destTableName',
           'type' => TType::STRING,
           ),
         3 => array(
@@ -3444,11 +3704,11 @@ class AdminService_cloneTable_args {
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['srcName'])) {
-        $this->srcName = $vals['srcName'];
+      if (isset($vals['srcTableName'])) {
+        $this->srcTableName = $vals['srcTableName'];
       }
-      if (isset($vals['destTable'])) {
-        $this->destTable = $vals['destTable'];
+      if (isset($vals['destTableName'])) {
+        $this->destTableName = $vals['destTableName'];
       }
       if (isset($vals['flushTable'])) {
         $this->flushTable = $vals['flushTable'];
@@ -3477,14 +3737,14 @@ class AdminService_cloneTable_args {
       {
         case 1:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->srcName);
+            $xfer += $input->readString($this->srcTableName);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
           if ($ftype == TType::STRING) {
-            $xfer += $input->readString($this->destTable);
+            $xfer += $input->readString($this->destTableName);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -3509,14 +3769,14 @@ class AdminService_cloneTable_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('AdminService_cloneTable_args');
-    if ($this->srcName !== null) {
-      $xfer += $output->writeFieldBegin('srcName', TType::STRING, 1);
-      $xfer += $output->writeString($this->srcName);
+    if ($this->srcTableName !== null) {
+      $xfer += $output->writeFieldBegin('srcTableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->srcTableName);
       $xfer += $output->writeFieldEnd();
     }
-    if ($this->destTable !== null) {
-      $xfer += $output->writeFieldBegin('destTable', TType::STRING, 2);
-      $xfer += $output->writeString($this->destTable);
+    if ($this->destTableName !== null) {
+      $xfer += $output->writeFieldBegin('destTableName', TType::STRING, 2);
+      $xfer += $output->writeString($this->destTableName);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->flushTable !== null) {
@@ -4540,18 +4800,18 @@ class AdminService_getTableSplits_args {
         case 2:
           if ($ftype == TType::MAP) {
             $this->startKey = array();
-            $_size62 = 0;
-            $_ktype63 = 0;
-            $_vtype64 = 0;
-            $xfer += $input->readMapBegin($_ktype63, $_vtype64, $_size62);
-            for ($_i66 = 0; $_i66 < $_size62; ++$_i66)
+            $_size76 = 0;
+            $_ktype77 = 0;
+            $_vtype78 = 0;
+            $xfer += $input->readMapBegin($_ktype77, $_vtype78, $_size76);
+            for ($_i80 = 0; $_i80 < $_size76; ++$_i80)
             {
-              $key67 = '';
-              $val68 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key67);
-              $val68 = new \SDS\Table\Datum();
-              $xfer += $val68->read($input);
-              $this->startKey[$key67] = $val68;
+              $key81 = '';
+              $val82 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key81);
+              $val82 = new \SDS\Table\Datum();
+              $xfer += $val82->read($input);
+              $this->startKey[$key81] = $val82;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4561,18 +4821,18 @@ class AdminService_getTableSplits_args {
         case 3:
           if ($ftype == TType::MAP) {
             $this->stopKey = array();
-            $_size69 = 0;
-            $_ktype70 = 0;
-            $_vtype71 = 0;
-            $xfer += $input->readMapBegin($_ktype70, $_vtype71, $_size69);
-            for ($_i73 = 0; $_i73 < $_size69; ++$_i73)
+            $_size83 = 0;
+            $_ktype84 = 0;
+            $_vtype85 = 0;
+            $xfer += $input->readMapBegin($_ktype84, $_vtype85, $_size83);
+            for ($_i87 = 0; $_i87 < $_size83; ++$_i87)
             {
-              $key74 = '';
-              $val75 = new \SDS\Table\Datum();
-              $xfer += $input->readString($key74);
-              $val75 = new \SDS\Table\Datum();
-              $xfer += $val75->read($input);
-              $this->stopKey[$key74] = $val75;
+              $key88 = '';
+              $val89 = new \SDS\Table\Datum();
+              $xfer += $input->readString($key88);
+              $val89 = new \SDS\Table\Datum();
+              $xfer += $val89->read($input);
+              $this->stopKey[$key88] = $val89;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4605,10 +4865,10 @@ class AdminService_getTableSplits_args {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->startKey));
         {
-          foreach ($this->startKey as $kiter76 => $viter77)
+          foreach ($this->startKey as $kiter90 => $viter91)
           {
-            $xfer += $output->writeString($kiter76);
-            $xfer += $viter77->write($output);
+            $xfer += $output->writeString($kiter90);
+            $xfer += $viter91->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4623,10 +4883,10 @@ class AdminService_getTableSplits_args {
       {
         $output->writeMapBegin(TType::STRING, TType::STRUCT, count($this->stopKey));
         {
-          foreach ($this->stopKey as $kiter78 => $viter79)
+          foreach ($this->stopKey as $kiter92 => $viter93)
           {
-            $xfer += $output->writeString($kiter78);
-            $xfer += $viter79->write($output);
+            $xfer += $output->writeString($kiter92);
+            $xfer += $viter93->write($output);
           }
         }
         $output->writeMapEnd();
@@ -4703,15 +4963,15 @@ class AdminService_getTableSplits_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size80 = 0;
-            $_etype83 = 0;
-            $xfer += $input->readListBegin($_etype83, $_size80);
-            for ($_i84 = 0; $_i84 < $_size80; ++$_i84)
+            $_size94 = 0;
+            $_etype97 = 0;
+            $xfer += $input->readListBegin($_etype97, $_size94);
+            for ($_i98 = 0; $_i98 < $_size94; ++$_i98)
             {
-              $elem85 = null;
-              $elem85 = new \SDS\Table\TableSplit();
-              $xfer += $elem85->read($input);
-              $this->success []= $elem85;
+              $elem99 = null;
+              $elem99 = new \SDS\Table\TableSplit();
+              $xfer += $elem99->read($input);
+              $this->success []= $elem99;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4747,9 +5007,9 @@ class AdminService_getTableSplits_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter86)
+          foreach ($this->success as $iter100)
           {
-            $xfer += $iter86->write($output);
+            $xfer += $iter100->write($output);
           }
         }
         $output->writeListEnd();
@@ -5004,15 +5264,15 @@ class AdminService_queryMetrics_args {
         case 1:
           if ($ftype == TType::LST) {
             $this->queries = array();
-            $_size87 = 0;
-            $_etype90 = 0;
-            $xfer += $input->readListBegin($_etype90, $_size87);
-            for ($_i91 = 0; $_i91 < $_size87; ++$_i91)
+            $_size101 = 0;
+            $_etype104 = 0;
+            $xfer += $input->readListBegin($_etype104, $_size101);
+            for ($_i105 = 0; $_i105 < $_size101; ++$_i105)
             {
-              $elem92 = null;
-              $elem92 = new \SDS\Admin\MetricQueryRequest();
-              $xfer += $elem92->read($input);
-              $this->queries []= $elem92;
+              $elem106 = null;
+              $elem106 = new \SDS\Admin\MetricQueryRequest();
+              $xfer += $elem106->read($input);
+              $this->queries []= $elem106;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5040,9 +5300,9 @@ class AdminService_queryMetrics_args {
       {
         $output->writeListBegin(TType::STRUCT, count($this->queries));
         {
-          foreach ($this->queries as $iter93)
+          foreach ($this->queries as $iter107)
           {
-            $xfer += $iter93->write($output);
+            $xfer += $iter107->write($output);
           }
         }
         $output->writeListEnd();
@@ -5119,15 +5379,15 @@ class AdminService_queryMetrics_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size94 = 0;
-            $_etype97 = 0;
-            $xfer += $input->readListBegin($_etype97, $_size94);
-            for ($_i98 = 0; $_i98 < $_size94; ++$_i98)
+            $_size108 = 0;
+            $_etype111 = 0;
+            $xfer += $input->readListBegin($_etype111, $_size108);
+            for ($_i112 = 0; $_i112 < $_size108; ++$_i112)
             {
-              $elem99 = null;
-              $elem99 = new \SDS\Admin\TimeSeriesData();
-              $xfer += $elem99->read($input);
-              $this->success []= $elem99;
+              $elem113 = null;
+              $elem113 = new \SDS\Admin\TimeSeriesData();
+              $xfer += $elem113->read($input);
+              $this->success []= $elem113;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5163,9 +5423,9 @@ class AdminService_queryMetrics_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter100)
+          foreach ($this->success as $iter114)
           {
-            $xfer += $iter100->write($output);
+            $xfer += $iter114->write($output);
           }
         }
         $output->writeListEnd();
@@ -5297,15 +5557,15 @@ class AdminService_findAllAppInfo_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size101 = 0;
-            $_etype104 = 0;
-            $xfer += $input->readListBegin($_etype104, $_size101);
-            for ($_i105 = 0; $_i105 < $_size101; ++$_i105)
+            $_size115 = 0;
+            $_etype118 = 0;
+            $xfer += $input->readListBegin($_etype118, $_size115);
+            for ($_i119 = 0; $_i119 < $_size115; ++$_i119)
             {
-              $elem106 = null;
-              $elem106 = new \SDS\Admin\AppInfo();
-              $xfer += $elem106->read($input);
-              $this->success []= $elem106;
+              $elem120 = null;
+              $elem120 = new \SDS\Admin\AppInfo();
+              $xfer += $elem120->read($input);
+              $this->success []= $elem120;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5341,9 +5601,9 @@ class AdminService_findAllAppInfo_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter107)
+          foreach ($this->success as $iter121)
           {
-            $xfer += $iter107->write($output);
+            $xfer += $iter121->write($output);
           }
         }
         $output->writeListEnd();
@@ -6531,14 +6791,14 @@ class AdminService_listSubscribedPhone_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size108 = 0;
-            $_etype111 = 0;
-            $xfer += $input->readListBegin($_etype111, $_size108);
-            for ($_i112 = 0; $_i112 < $_size108; ++$_i112)
+            $_size122 = 0;
+            $_etype125 = 0;
+            $xfer += $input->readListBegin($_etype125, $_size122);
+            for ($_i126 = 0; $_i126 < $_size122; ++$_i126)
             {
-              $elem113 = null;
-              $xfer += $input->readString($elem113);
-              $this->success []= $elem113;
+              $elem127 = null;
+              $xfer += $input->readString($elem127);
+              $this->success []= $elem127;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -6574,9 +6834,9 @@ class AdminService_listSubscribedPhone_result {
       {
         $output->writeListBegin(TType::STRING, count($this->success));
         {
-          foreach ($this->success as $iter114)
+          foreach ($this->success as $iter128)
           {
-            $xfer += $output->writeString($iter114);
+            $xfer += $output->writeString($iter128);
           }
         }
         $output->writeListEnd();
@@ -6732,14 +6992,14 @@ class AdminService_listSubscribedEmail_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size115 = 0;
-            $_etype118 = 0;
-            $xfer += $input->readListBegin($_etype118, $_size115);
-            for ($_i119 = 0; $_i119 < $_size115; ++$_i119)
+            $_size129 = 0;
+            $_etype132 = 0;
+            $xfer += $input->readListBegin($_etype132, $_size129);
+            for ($_i133 = 0; $_i133 < $_size129; ++$_i133)
             {
-              $elem120 = null;
-              $xfer += $input->readString($elem120);
-              $this->success []= $elem120;
+              $elem134 = null;
+              $xfer += $input->readString($elem134);
+              $this->success []= $elem134;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -6775,9 +7035,9 @@ class AdminService_listSubscribedEmail_result {
       {
         $output->writeListBegin(TType::STRING, count($this->success));
         {
-          foreach ($this->success as $iter121)
+          foreach ($this->success as $iter135)
           {
-            $xfer += $output->writeString($iter121);
+            $xfer += $output->writeString($iter135);
           }
         }
         $output->writeListEnd();
@@ -6983,17 +7243,17 @@ class AdminService_getTableHistorySize_result {
         case 0:
           if ($ftype == TType::MAP) {
             $this->success = array();
-            $_size122 = 0;
-            $_ktype123 = 0;
-            $_vtype124 = 0;
-            $xfer += $input->readMapBegin($_ktype123, $_vtype124, $_size122);
-            for ($_i126 = 0; $_i126 < $_size122; ++$_i126)
+            $_size136 = 0;
+            $_ktype137 = 0;
+            $_vtype138 = 0;
+            $xfer += $input->readMapBegin($_ktype137, $_vtype138, $_size136);
+            for ($_i140 = 0; $_i140 < $_size136; ++$_i140)
             {
-              $key127 = 0;
-              $val128 = 0;
-              $xfer += $input->readI64($key127);
-              $xfer += $input->readI64($val128);
-              $this->success[$key127] = $val128;
+              $key141 = 0;
+              $val142 = 0;
+              $xfer += $input->readI64($key141);
+              $xfer += $input->readI64($val142);
+              $this->success[$key141] = $val142;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7029,10 +7289,10 @@ class AdminService_getTableHistorySize_result {
       {
         $output->writeMapBegin(TType::I64, TType::I64, count($this->success));
         {
-          foreach ($this->success as $kiter129 => $viter130)
+          foreach ($this->success as $kiter143 => $viter144)
           {
-            $xfer += $output->writeI64($kiter129);
-            $xfer += $output->writeI64($viter130);
+            $xfer += $output->writeI64($kiter143);
+            $xfer += $output->writeI64($viter144);
           }
         }
         $output->writeMapEnd();
@@ -8090,15 +8350,15 @@ class AdminService_listAllSnapshots_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size131 = 0;
-            $_etype134 = 0;
-            $xfer += $input->readListBegin($_etype134, $_size131);
-            for ($_i135 = 0; $_i135 < $_size131; ++$_i135)
+            $_size145 = 0;
+            $_etype148 = 0;
+            $xfer += $input->readListBegin($_etype148, $_size145);
+            for ($_i149 = 0; $_i149 < $_size145; ++$_i149)
             {
-              $elem136 = null;
-              $elem136 = new \SDS\Admin\SnapshotTableView();
-              $xfer += $elem136->read($input);
-              $this->success []= $elem136;
+              $elem150 = null;
+              $elem150 = new \SDS\Admin\SnapshotTableView();
+              $xfer += $elem150->read($input);
+              $this->success []= $elem150;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -8134,9 +8394,9 @@ class AdminService_listAllSnapshots_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter137)
+          foreach ($this->success as $iter151)
           {
-            $xfer += $iter137->write($output);
+            $xfer += $iter151->write($output);
           }
         }
         $output->writeListEnd();
@@ -8696,6 +8956,882 @@ class AdminService_getQuotaInfo_result {
       $xfer += $this->success->write($output);
       $xfer += $output->writeFieldEnd();
     }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getLatestStreamCheckpoint_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $topicName = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'topicName',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['topicName'])) {
+        $this->topicName = $vals['topicName'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getLatestStreamCheckpoint_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topicName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getLatestStreamCheckpoint_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicName !== null) {
+      $xfer += $output->writeFieldBegin('topicName', TType::STRING, 2);
+      $xfer += $output->writeString($this->topicName);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getLatestStreamCheckpoint_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Admin\StreamCheckpoint
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Admin\StreamCheckpoint',
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getLatestStreamCheckpoint_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \SDS\Admin\StreamCheckpoint();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getLatestStreamCheckpoint_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getFloorStreamCheckpoint_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $topicName = null;
+  /**
+   * @var int
+   */
+  public $timestamp = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'topicName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'timestamp',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['topicName'])) {
+        $this->topicName = $vals['topicName'];
+      }
+      if (isset($vals['timestamp'])) {
+        $this->timestamp = $vals['timestamp'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getFloorStreamCheckpoint_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topicName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->timestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getFloorStreamCheckpoint_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicName !== null) {
+      $xfer += $output->writeFieldBegin('topicName', TType::STRING, 2);
+      $xfer += $output->writeString($this->topicName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->timestamp !== null) {
+      $xfer += $output->writeFieldBegin('timestamp', TType::I64, 3);
+      $xfer += $output->writeI64($this->timestamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getFloorStreamCheckpoint_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Admin\StreamCheckpoint
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Admin\StreamCheckpoint',
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getFloorStreamCheckpoint_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \SDS\Admin\StreamCheckpoint();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getFloorStreamCheckpoint_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getCeilStreamCheckpoint_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $tableName = null;
+  /**
+   * @var string
+   */
+  public $topicName = null;
+  /**
+   * @var int
+   */
+  public $timestamp = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'tableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'topicName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'timestamp',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['tableName'])) {
+        $this->tableName = $vals['tableName'];
+      }
+      if (isset($vals['topicName'])) {
+        $this->topicName = $vals['topicName'];
+      }
+      if (isset($vals['timestamp'])) {
+        $this->timestamp = $vals['timestamp'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getCeilStreamCheckpoint_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->tableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topicName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->timestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getCeilStreamCheckpoint_args');
+    if ($this->tableName !== null) {
+      $xfer += $output->writeFieldBegin('tableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->tableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicName !== null) {
+      $xfer += $output->writeFieldBegin('topicName', TType::STRING, 2);
+      $xfer += $output->writeString($this->topicName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->timestamp !== null) {
+      $xfer += $output->writeFieldBegin('timestamp', TType::I64, 3);
+      $xfer += $output->writeI64($this->timestamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_getCeilStreamCheckpoint_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Admin\StreamCheckpoint
+   */
+  public $success = null;
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Admin\StreamCheckpoint',
+          ),
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_getCeilStreamCheckpoint_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \SDS\Admin\StreamCheckpoint();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_getCeilStreamCheckpoint_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->se !== null) {
+      $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
+      $xfer += $this->se->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_recoverTable_args {
+  static $_TSPEC;
+
+  /**
+   * @var string
+   */
+  public $srcTableName = null;
+  /**
+   * @var string
+   */
+  public $destTableName = null;
+  /**
+   * @var string
+   */
+  public $topicName = null;
+  /**
+   * @var int
+   */
+  public $timestamp = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'srcTableName',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'destTableName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'topicName',
+          'type' => TType::STRING,
+          ),
+        4 => array(
+          'var' => 'timestamp',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['srcTableName'])) {
+        $this->srcTableName = $vals['srcTableName'];
+      }
+      if (isset($vals['destTableName'])) {
+        $this->destTableName = $vals['destTableName'];
+      }
+      if (isset($vals['topicName'])) {
+        $this->topicName = $vals['topicName'];
+      }
+      if (isset($vals['timestamp'])) {
+        $this->timestamp = $vals['timestamp'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_recoverTable_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->srcTableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->destTableName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topicName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->timestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_recoverTable_args');
+    if ($this->srcTableName !== null) {
+      $xfer += $output->writeFieldBegin('srcTableName', TType::STRING, 1);
+      $xfer += $output->writeString($this->srcTableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->destTableName !== null) {
+      $xfer += $output->writeFieldBegin('destTableName', TType::STRING, 2);
+      $xfer += $output->writeString($this->destTableName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicName !== null) {
+      $xfer += $output->writeFieldBegin('topicName', TType::STRING, 3);
+      $xfer += $output->writeString($this->topicName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->timestamp !== null) {
+      $xfer += $output->writeFieldBegin('timestamp', TType::I64, 4);
+      $xfer += $output->writeI64($this->timestamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class AdminService_recoverTable_result {
+  static $_TSPEC;
+
+  /**
+   * @var \SDS\Errors\ServiceException
+   */
+  public $se = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'se',
+          'type' => TType::STRUCT,
+          'class' => '\SDS\Errors\ServiceException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['se'])) {
+        $this->se = $vals['se'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'AdminService_recoverTable_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->se = new \SDS\Errors\ServiceException();
+            $xfer += $this->se->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('AdminService_recoverTable_result');
     if ($this->se !== null) {
       $xfer += $output->writeFieldBegin('se', TType::STRUCT, 1);
       $xfer += $this->se->write($output);

@@ -1309,6 +1309,12 @@ class TableSnapshots {
    * @var \SDS\Admin\Snapshot[]
    */
   public $userSnapshots = null;
+  /**
+   * PointInTimeRecovery生成的快照
+   * 
+   * @var \SDS\Admin\Snapshot[]
+   */
+  public $pitrSnapshots = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -1335,6 +1341,15 @@ class TableSnapshots {
             'class' => '\SDS\Admin\Snapshot',
             ),
           ),
+        4 => array(
+          'var' => 'pitrSnapshots',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Admin\Snapshot',
+            ),
+          ),
         );
     }
     if (is_array($vals)) {
@@ -1346,6 +1361,9 @@ class TableSnapshots {
       }
       if (isset($vals['userSnapshots'])) {
         $this->userSnapshots = $vals['userSnapshots'];
+      }
+      if (isset($vals['pitrSnapshots'])) {
+        $this->pitrSnapshots = $vals['pitrSnapshots'];
       }
     }
   }
@@ -1412,6 +1430,24 @@ class TableSnapshots {
             $xfer += $input->skip($ftype);
           }
           break;
+        case 4:
+          if ($ftype == TType::LST) {
+            $this->pitrSnapshots = array();
+            $_size46 = 0;
+            $_etype49 = 0;
+            $xfer += $input->readListBegin($_etype49, $_size46);
+            for ($_i50 = 0; $_i50 < $_size46; ++$_i50)
+            {
+              $elem51 = null;
+              $elem51 = new \SDS\Admin\Snapshot();
+              $xfer += $elem51->read($input);
+              $this->pitrSnapshots []= $elem51;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
         default:
           $xfer += $input->skip($ftype);
           break;
@@ -1438,9 +1474,9 @@ class TableSnapshots {
       {
         $output->writeListBegin(TType::STRUCT, count($this->sysSnapshots));
         {
-          foreach ($this->sysSnapshots as $iter46)
+          foreach ($this->sysSnapshots as $iter52)
           {
-            $xfer += $iter46->write($output);
+            $xfer += $iter52->write($output);
           }
         }
         $output->writeListEnd();
@@ -1455,9 +1491,26 @@ class TableSnapshots {
       {
         $output->writeListBegin(TType::STRUCT, count($this->userSnapshots));
         {
-          foreach ($this->userSnapshots as $iter47)
+          foreach ($this->userSnapshots as $iter53)
           {
-            $xfer += $iter47->write($output);
+            $xfer += $iter53->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->pitrSnapshots !== null) {
+      if (!is_array($this->pitrSnapshots)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('pitrSnapshots', TType::LST, 4);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->pitrSnapshots));
+        {
+          foreach ($this->pitrSnapshots as $iter54)
+          {
+            $xfer += $iter54->write($output);
           }
         }
         $output->writeListEnd();
@@ -1969,6 +2022,268 @@ class QuotaInfo {
     if ($this->slaveWriteCapacityUsed !== null) {
       $xfer += $output->writeFieldBegin('slaveWriteCapacityUsed', TType::I64, 13);
       $xfer += $output->writeI64($this->slaveWriteCapacityUsed);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class TopicPartitionState {
+  static $_TSPEC;
+
+  /**
+   * partition id for this topic
+   * 
+   * 
+   * @var int
+   */
+  public $partitionId = null;
+  /**
+   * The message offset of checkpoint in this partition
+   * 
+   * 
+   * @var int
+   */
+  public $offset = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'offset',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+      if (isset($vals['offset'])) {
+        $this->offset = $vals['offset'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'TopicPartitionState';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->offset);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('TopicPartitionState');
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->offset !== null) {
+      $xfer += $output->writeFieldBegin('offset', TType::I64, 2);
+      $xfer += $output->writeI64($this->offset);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class StreamCheckpoint {
+  static $_TSPEC;
+
+  /**
+   * checkpoint timestamp
+   * 
+   * 
+   * @var int
+   */
+  public $timestamp = null;
+  /**
+   * topic name
+   * 
+   * 
+   * @var string
+   */
+  public $topicName = null;
+  /**
+   * topic partition state list
+   * 
+   * 
+   * @var \SDS\Admin\TopicPartitionState[]
+   */
+  public $partitionStates = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'timestamp',
+          'type' => TType::I64,
+          ),
+        2 => array(
+          'var' => 'topicName',
+          'type' => TType::STRING,
+          ),
+        3 => array(
+          'var' => 'partitionStates',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\SDS\Admin\TopicPartitionState',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['timestamp'])) {
+        $this->timestamp = $vals['timestamp'];
+      }
+      if (isset($vals['topicName'])) {
+        $this->topicName = $vals['topicName'];
+      }
+      if (isset($vals['partitionStates'])) {
+        $this->partitionStates = $vals['partitionStates'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'StreamCheckpoint';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->timestamp);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->topicName);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::LST) {
+            $this->partitionStates = array();
+            $_size55 = 0;
+            $_etype58 = 0;
+            $xfer += $input->readListBegin($_etype58, $_size55);
+            for ($_i59 = 0; $_i59 < $_size55; ++$_i59)
+            {
+              $elem60 = null;
+              $elem60 = new \SDS\Admin\TopicPartitionState();
+              $xfer += $elem60->read($input);
+              $this->partitionStates []= $elem60;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('StreamCheckpoint');
+    if ($this->timestamp !== null) {
+      $xfer += $output->writeFieldBegin('timestamp', TType::I64, 1);
+      $xfer += $output->writeI64($this->timestamp);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->topicName !== null) {
+      $xfer += $output->writeFieldBegin('topicName', TType::STRING, 2);
+      $xfer += $output->writeString($this->topicName);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->partitionStates !== null) {
+      if (!is_array($this->partitionStates)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('partitionStates', TType::LST, 3);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->partitionStates));
+        {
+          foreach ($this->partitionStates as $iter61)
+          {
+            $xfer += $iter61->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
